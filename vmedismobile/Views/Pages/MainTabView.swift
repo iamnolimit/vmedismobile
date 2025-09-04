@@ -29,14 +29,21 @@ struct MainTabView: View {
                     Text("Transactions")
                 }
                 .tag(2)
-            
-            // Profile Tab
+              // Profile Tab
             ProfileView(userData: userData)
                 .tabItem {
                     Image(systemName: selectedTab == 3 ? "person.circle.fill" : "person.circle")
                     Text("Profile")
                 }
                 .tag(3)
+            
+            // Debug Tab (temporary for testing)
+            BypassDebugView(userData: userData)
+                .tabItem {
+                    Image(systemName: selectedTab == 4 ? "wrench.fill" : "wrench")
+                    Text("Debug")
+                }
+                .tag(4)
         }
         .accentColor(.blue)
         .onAppear {

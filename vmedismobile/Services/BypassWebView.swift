@@ -50,6 +50,9 @@ struct LoadingBypassWebView: View {
     @State private var isLoading = true
     @State private var bypassUrl: URL?
     @State private var errorMessage: String?
+    @State private var retryCount = 0
+    
+    private let maxRetries = 2
     
     var body: some View {
         Group {
@@ -61,6 +64,13 @@ struct LoadingBypassWebView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                         .padding(.top, 8)
+                    
+                    if retryCount > 0 {
+                        Text("Retry attempt \(retryCount)/\(maxRetries)")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                            .padding(.top, 4)
+                    }
                 }
             } else if let error = errorMessage {
                 VStack {
@@ -68,29 +78,42 @@ struct LoadingBypassWebView: View {
                         .font(.system(size: 50))
                         .foregroundColor(.orange)
                     
-                    Text("Connection Error")
+                    Text("Connection Issue")
                         .font(.headline)
                         .padding(.top)
                     
-                    Text(error)
+                    Text(retryCount >= maxRetries ? "Loading with standard authentication..." : error)
                         .font(.caption)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                         .padding()
                     
-                    Button("Retry") {
-                        loadBypassUrl()
+                    if retryCount < maxRetries {
+                        Button("Retry") {
+                            loadBypassUrl()
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    } else {
+                        // Final fallback after max retries
+                        Button("Continue with Standard Login") {
+                            let fallbackUrl = URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!
+                            self.bypassUrl = fallbackUrl
+                            self.errorMessage = nil
+                        }
+                        .padding()
+                        .background(Color.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
                     }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
                 }
                 .padding()
             } else if let url = bypassUrl {
                 WebView(url: url)
             } else {
-                // Fallback to original WebView
+                // Should not reach here, but provide fallback
                 WebView(url: URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!)
             }
         }
@@ -103,6 +126,7 @@ struct LoadingBypassWebView: View {
         isLoading = true
         errorMessage = nil
         bypassUrl = nil
+        retryCount += 1
         
         Task {
             do {
@@ -114,12 +138,23 @@ struct LoadingBypassWebView: View {
                 await MainActor.run {
                     self.bypassUrl = url
                     self.isLoading = false
+                    print("Successfully loaded bypass URL: \(url)")
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = "Failed to generate secure access token"
+                    let errorMsg = "Authentication setup failed (\(retryCount)/\(maxRetries))"
+                    self.errorMessage = errorMsg
                     self.isLoading = false
-                    print("Bypass login error: \(error)")
+                    print("Bypass login error (attempt \(retryCount)): \(error)")
+                    
+                    // Auto-retry for first few attempts
+                    if retryCount < maxRetries {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            if self.errorMessage == errorMsg { // Only retry if error hasn't changed
+                                loadBypassUrl()
+                            }
+                        }
+                    }
                 }
             }
         }
