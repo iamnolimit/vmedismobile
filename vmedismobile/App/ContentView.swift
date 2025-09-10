@@ -65,34 +65,43 @@ struct ContentView: View {
     
     // MARK: - Header View
     private var headerView: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 5) {
-                Image(systemName: "arrow.up")
-                    .foregroundColor(Color.blue.opacity(0.5))
-                    .font(.title2)
-                Image(systemName: "arrow.up")
-                    .foregroundColor(Color.blue.opacity(0.3))
-                    .font(.title2)
-            }
-            
-            ZStack {
-                Image(systemName: "heart.fill")
-                    .foregroundColor(.red)
-                    .font(.title)
+            VStack(spacing: 20) {
+                // Logo dari Bundle Resource
+                if let logoImage = UIImage(named: "logo") {
+                    Image(uiImage: logoImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                } else {
+                    // Fallback design jika logo tidak ditemukan
+                    VStack(spacing: 10) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.up")
+                                .foregroundColor(Color.blue.opacity(0.5))
+                                .font(.title2)
+                            Image(systemName: "arrow.up")
+                                .foregroundColor(Color.blue.opacity(0.3))
+                                .font(.title2)
+                        }
+                        
+                        ZStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.red)
+                                .font(.title)
+                            
+                            Image(systemName: "plus")
+                                .foregroundColor(.white)
+                                .font(.caption)
+                                .offset(y: -2)
+                        }
+                    }
+                }
                 
-                Image(systemName: "plus")
-                    .foregroundColor(.white)
-                    .font(.caption)
-                    .offset(y: -2)
             }
-            
-            Text("Vmedis.com")
-                .font(.title2)
-                .fontWeight(.medium)
-                .foregroundColor(.blue)
+            .padding(.top, 20)
         }
-        .padding(.top, 20)
-    }
     
     // MARK: - Carousel Rotation View
     private var carouselRotationView: some View {
