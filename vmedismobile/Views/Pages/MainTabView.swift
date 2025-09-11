@@ -37,13 +37,6 @@ struct MainTabView: View {
                 }
                 .tag(3)
             
-            // Debug Tab (temporary for testing)
-            BypassDebugView(userData: userData)
-                .tabItem {
-                    Image(systemName: selectedTab == 4 ? "wrench.fill" : "wrench")
-                    Text("Debug")
-                }
-                .tag(4)
         }
         .accentColor(.blue)
         .onAppear {
@@ -258,7 +251,7 @@ struct TransactionsView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Text("Transactions")
+                Text("Transactions")	
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
@@ -319,9 +312,6 @@ struct ProfileView: View {
                         }
                     }
                     .padding()
-                    .background(Color.white)
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     
                     // Profile Options
                     VStack(spacing: 0) {
