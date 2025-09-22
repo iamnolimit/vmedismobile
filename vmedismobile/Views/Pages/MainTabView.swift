@@ -4,7 +4,8 @@ import SwiftUI
 struct MainTabView: View {
     let userData: UserData
     @State private var selectedTab = 0
-      var body: some View {
+    
+    var body: some View {
         TabView(selection: $selectedTab) {
             // 1. Home Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
@@ -46,8 +47,8 @@ struct MainTabView: View {
                 }
                 .tag(4)
                 
-            // 6. Profile Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=profile")
+            // 6. Profile Tab - Using native ProfileView
+            ProfileView(userData: userData)
                 .tabItem {
                     Image(systemName: selectedTab == 5 ? "person.circle.fill" : "person.circle")
                     Text("Profil")
@@ -76,6 +77,113 @@ struct MainTabView: View {
             
             UITabBar.appearance().standardAppearance = tabBarAppearance
             UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
+    }
+}
+
+// MARK: - Profile View
+struct ProfileView: View {
+    let userData: UserData
+    @EnvironmentObject var appState: AppState
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Profile Header
+                    VStack(spacing: 16) {
+                        // Profile Image
+                        AsyncImage(url: URL(string: "https://via.placeholder.com/100")) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.gray)
+                                )
+                        }
+                        .frame(width: 100, height: 100)
+                        .clipShape(Circle())
+                        
+                        VStack(spacing: 4) {
+                            Text(userData.nama_lengkap ?? "User")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            
+                            Text(userData.username ?? "")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            if let klinikName = userData.kl_nama {
+                                Text(klinikName)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 4)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(6)
+                            }
+                        }
+                    }
+                    .padding()
+                    
+                    // Profile Options
+                    VStack(spacing: 0) {
+                        ProfileOptionRow(icon: "gear", title: "Settings", action: {})
+                        Divider()
+                        ProfileOptionRow(icon: "bell", title: "Notifications", action: {})
+                        Divider()
+                        ProfileOptionRow(icon: "questionmark.circle", title: "Help & Support", action: {})
+                        Divider()
+                        ProfileOptionRow(
+                            icon: "rectangle.portrait.and.arrow.right",
+                            title: "Logout",
+                            action: {
+                                appState.logout()
+                            }
+                        )
+                    }
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                }
+                .padding()
+            }
+            .background(Color.gray.opacity(0.05))
+            .navigationTitle("Profile")
+        }
+    }
+}
+
+// MARK: - Profile Option Row
+struct ProfileOptionRow: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.blue)
+                    .frame(width: 30)
+                
+                Text(title)
+                    .font(.body)
+                    .foregroundColor(.black)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+            }
+            .padding()
         }
     }
 }
