@@ -2,7 +2,6 @@
 import SwiftUI
 
 struct LoginPageView: View {
-    @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appState: AppState
     @StateObject private var loginService = LoginService()
     
@@ -27,10 +26,7 @@ struct LoginPageView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                customNavigationBar
-                
+              VStack(spacing: 0) {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 40) {
                         headerSection.padding(.top, 40)
@@ -47,28 +43,9 @@ struct LoginPageView: View {
             Button("OK") { }
         } message: {
             Text(alertMessage)
-        }
-    }
-      // MARK: - Custom Navigation Bar
-    private var customNavigationBar: some View {
-        HStack {
-            Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .foregroundColor(accentColor)
-                    .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.8))
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 10)
-    }
-      private var headerSection: some View {
+        }    }
+    
+    private var headerSection: some View {
         VStack(spacing: 32) {
             // Logo from Bundle Resource
             if let logoImage = UIImage(named: "logo") {
