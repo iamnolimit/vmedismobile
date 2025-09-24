@@ -56,23 +56,7 @@ struct LoadingBypassWebView: View {
     
     var body: some View {
         Group {
-            if isLoading {
-                VStack {
-                    ProgressView("Loading...")
-                        .progressViewStyle(CircularProgressViewStyle())
-                    Text("Preparing secure access...")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .padding(.top, 8)
-                    
-                    if retryCount > 0 {
-                        Text("Retry attempt \(retryCount)/\(maxRetries)")
-                            .font(.caption2)
-                            .foregroundColor(.orange)
-                            .padding(.top, 4)
-                    }
-                }
-            } else if let error = errorMessage {
+            if let error = errorMessage {
                 VStack {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 50))
