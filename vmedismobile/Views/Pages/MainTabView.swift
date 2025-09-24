@@ -30,30 +30,21 @@ struct MainTabView: View {
                     Text("Keuangan")
                 }
                 .tag(2)
-                
-            // 4. Forecast Tab
+                  // 4. Forecast Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
                 .tabItem {
                     Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                     Text("Forecast")
                 }
                 .tag(3)
-            
-            // 5. Customer Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
-                .tabItem {
-                    Image(systemName: selectedTab == 4 ? "person.3.fill" : "person.3")
-                    Text("Customer")
-                }
-                .tag(4)
                 
-            // 6. Profile Tab - Using native ProfileView
+            // 5. Account Tab - Using native ProfileView with Customer menu
             ProfileView(userData: userData)
                 .tabItem {
-                    Image(systemName: selectedTab == 5 ? "person.circle.fill" : "person.circle")
-                    Text("Profil")
+                    Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
+                    Text("Akun")
                 }
-                .tag(5)
+                .tag(4)
             
         }
         .accentColor(.blue)
@@ -85,6 +76,7 @@ struct MainTabView: View {
 struct ProfileView: View {
     let userData: UserData
     @EnvironmentObject var appState: AppState
+    @State private var showingCustomer = false
     
     var body: some View {
         NavigationView {
@@ -128,11 +120,14 @@ struct ProfileView: View {
                                     .cornerRadius(6)
                             }
                         }
-                    }
-                    .padding()
+                    }                    .padding()
                     
                     // Profile Options
                     VStack(spacing: 0) {
+                        ProfileOptionRow(icon: "person.3", title: "Customer", action: {
+                            showingCustomer = true
+                        })
+                        Divider()
                         ProfileOptionRow(icon: "gear", title: "Settings", action: {})
                         Divider()
                         ProfileOptionRow(icon: "bell", title: "Notifications", action: {})
@@ -149,12 +144,14 @@ struct ProfileView: View {
                     }
                     .background(Color.white)
                     .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                }
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)                }
                 .padding()
             }
             .background(Color.gray.opacity(0.05))
             .navigationTitle("Profile")
+            .sheet(isPresented: $showingCustomer) {
+                CustomerView(userData: userData)
+            }
         }
     }
 }
@@ -184,6 +181,27 @@ struct ProfileOptionRow: View {
                     .foregroundColor(.gray)
             }
             .padding()
+        }
+    }
+}
+
+// MARK: - Customer View
+struct CustomerView: View {
+    let userData: UserData
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
+                .navigationTitle("Customer")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Close") {
+                            dismiss()
+                        }
+                    }
+                }
         }
     }
 }
