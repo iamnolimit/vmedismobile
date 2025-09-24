@@ -77,6 +77,7 @@ struct ProfileView: View {
     let userData: UserData
     @EnvironmentObject var appState: AppState
     @State private var showingCustomer = false
+    @State private var showingLaporanPenjualanObat = false
     
     var body: some View {
         NavigationView {
@@ -122,17 +123,14 @@ struct ProfileView: View {
                         }
                     }                    .padding()
                     
-                    // Profile Options
-                    VStack(spacing: 0) {
+                    // Profile Options                    VStack(spacing: 0) {
                         ProfileOptionRow(icon: "person.3", title: "Customer", action: {
                             showingCustomer = true
                         })
                         Divider()
-                        ProfileOptionRow(icon: "gear", title: "Settings", action: {})
-                        Divider()
-                        ProfileOptionRow(icon: "bell", title: "Notifications", action: {})
-                        Divider()
-                        ProfileOptionRow(icon: "questionmark.circle", title: "Help & Support", action: {})
+                        ProfileOptionRow(icon: "chart.bar.doc.horizontal", title: "Laporan Penjualan Obat", action: {
+                            showingLaporanPenjualanObat = true
+                        })
                         Divider()
                         ProfileOptionRow(
                             icon: "rectangle.portrait.and.arrow.right",
@@ -147,10 +145,12 @@ struct ProfileView: View {
                     .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)                }
                 .padding()
             }
-            .background(Color.gray.opacity(0.05))
-            .navigationTitle("Profile")
+            .background(Color.gray.opacity(0.05))            .navigationTitle("Profile")
             .sheet(isPresented: $showingCustomer) {
                 CustomerView(userData: userData)
+            }
+            .sheet(isPresented: $showingLaporanPenjualanObat) {
+                LaporanPenjualanObatView(userData: userData)
             }
         }
     }
@@ -194,6 +194,27 @@ struct CustomerView: View {
         NavigationView {
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
                 .navigationTitle("Customer")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Close") {
+                            dismiss()
+                        }
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Laporan Penjualan Obat View
+struct LaporanPenjualanObatView: View {
+    let userData: UserData
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=lappenjualanobat")
+                .navigationTitle("Laporan Penjualan Obat")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
