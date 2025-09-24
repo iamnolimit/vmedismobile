@@ -150,29 +150,15 @@ struct LoginPageView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
         )
-    }
-      // MARK: - Footer Section
+    }    // MARK: - Footer Section
     private var footerSection: some View {
         VStack(spacing: 20) {
-            Button("Lupa Password?") {
-                handleForgotPassword()
-            }
-            .font(.system(size: 16, weight: .medium))
-            .foregroundColor(accentColor)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(accentColor.opacity(0.3), lineWidth: 1)
-                    .background(Color.white.opacity(0.8))
-            )
-            
             Text("Sistem Manajemen Apotek & Klinik")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             
-            Text("Powered by VmedisSmart")
+            Text("Powered by Vmedis")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary.opacity(0.7))
         }
@@ -240,16 +226,9 @@ struct LoginPageView: View {
                 showAlert = true
             }
         }
-        
-        await MainActor.run {
+          await MainActor.run {
             isLoading = false
         }
-    }
-    
-    private func handleForgotPassword() {
-        alertTitle = "Lupa Password"
-        alertMessage = "Silakan hubungi administrator untuk reset password."
-        showAlert = true
     }
 }
 
