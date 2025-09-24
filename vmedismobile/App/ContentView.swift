@@ -47,9 +47,8 @@ struct ContentView: View {
                 
                 Spacer()
             }
-        }
-        .sheet(isPresented: $showLoginPage) {
-            LoginPageView(selectedItem: sliderItems[currentIndex])
+        }        .sheet(isPresented: $showLoginPage) {
+            LoginPageView()
         }
     }
     
