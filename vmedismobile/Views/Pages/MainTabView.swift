@@ -154,7 +154,7 @@ struct ProfileView: View {
             }
         }
     }
-}
+
 
 // MARK: - Profile Option Row
 struct ProfileOptionRow: View {
