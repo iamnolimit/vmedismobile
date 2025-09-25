@@ -99,18 +99,21 @@ struct LoadingBypassWebView: View {
             } else {
                 // Should not reach here, but provide fallback
                 WebView(url: URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!)
-            }
-        }
+            }        }
         .onAppear {
             loadBypassUrl()
+        }        .onChange(of: userData.id) { _ in
+            // Refresh WebView when userData changes (after login)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                loadBypassUrl()
+            }
         }
     }
-    
-    private func loadBypassUrl() {
+      private func loadBypassUrl() {
         isLoading = true
         errorMessage = nil
         bypassUrl = nil
-        retryCount += 1
+        retryCount = 0 // Reset retry count on fresh load
         
         Task {
             do {

@@ -2,8 +2,17 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var appState: AppState
+    
     var body: some View {
-        LoginPageView()
+        Group {
+            if appState.isLoggedIn, let userData = appState.userData {
+                MainTabView(userData: userData)
+            } else {
+                LoginPageView()
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: appState.isLoggedIn)
     }
 }
 
