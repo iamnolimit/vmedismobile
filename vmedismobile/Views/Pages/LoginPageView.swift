@@ -210,7 +210,7 @@ struct LoginPageView: View {
             } else {
                 await MainActor.run {
                     alertTitle = "Login Gagal"
-                    alertMessage = response.message ?? "Username atau password tidak valid"
+                    alertMessage = "Username atau password tidak valid"
                     showAlert = true
                 }
             }
