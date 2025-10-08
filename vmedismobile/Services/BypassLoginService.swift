@@ -47,7 +47,7 @@ struct TokenResponse: Codable {
 class BypassLoginService: ObservableObject {
     static let shared = BypassLoginService()
     
-    private let baseUrlReact = "https://v3.vmedismart.com/"
+    private let baseUrlReact = "https://v3.vmedis.com/"
     
     private init() {}
       func generateTokenUrl(userData: UserData, destinationUrl: String = "mobile") async throws -> URL {
@@ -113,8 +113,7 @@ class BypassLoginService: ObservableObject {
             return try await generateFallbackUrl(userData: userData, destinationUrl: destinationUrl, accessToken: accessToken)
         }
     }
-    
-    private func generateFallbackUrl(userData: UserData, destinationUrl: String, accessToken: String) async throws -> URL {
+      private func generateFallbackUrl(userData: UserData, destinationUrl: String, accessToken: String) async throws -> URL {
         // Fallback approach - try to construct URL with direct token
         let domain = userData.domain ?? ""
         let userId = userData.id ?? 0
@@ -123,8 +122,8 @@ class BypassLoginService: ObservableObject {
         let fallbackUrls = [
             "\(baseUrlReact)\(domain)/auth?token=\(accessToken)&menu=\(destinationUrl)",
             "\(baseUrlReact)\(domain)/\(destinationUrl)?token=\(accessToken)",
-            "\(baseUrlReact)vmart/\(destinationUrl)?domain=\(domain)&token=\(accessToken)",
-            "\(baseUrlReact)vmart/\(destinationUrl)?domain=\(domain)&user=\(userId)"
+            "\(baseUrlReact)\(domain)/\(destinationUrl)?domain=\(domain)&token=\(accessToken)",
+            "\(baseUrlReact)\(domain)/\(destinationUrl)?domain=\(domain)&user=\(userId)"
         ]
         
         for urlString in fallbackUrls {
@@ -134,8 +133,8 @@ class BypassLoginService: ObservableObject {
             }
         }
         
-        // Final fallback - original URL
-        let originalUrl = "\(baseUrlReact)vmart/\(destinationUrl)"
+        // Final fallback - original URL with dynamic domain
+        let originalUrl = "\(baseUrlReact)\(domain)/\(destinationUrl)"
         guard let url = URL(string: originalUrl) else {
             throw URLError(.badURL)
         }

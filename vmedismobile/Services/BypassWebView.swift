@@ -29,12 +29,12 @@ struct BypassWebView: UIViewRepresentable {
                 await MainActor.run {
                     let request = URLRequest(url: bypassUrl)
                     webView.load(request)
-                }
-            } catch {
+                }            } catch {
                 print("Error generating bypass URL: \(error)")
                 await MainActor.run {
-                    // Fallback to original URL if bypass fails
-                    let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
+                    // Fallback to original URL with dynamic domain
+                    let domain = userData.domain ?? "vmart"
+                    let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
                     let request = URLRequest(url: fallbackUrl)
                     webView.load(request)
                 }
@@ -79,11 +79,11 @@ struct LoadingBypassWebView: View {
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(8)
-                    } else {
+                        .cornerRadius(8)                    } else {
                         // Final fallback after max retries
                         Button("Continue with Standard Login") {
-                            let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
+                            let domain = userData.domain ?? "vmart"
+                            let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
                             self.bypassUrl = fallbackUrl
                             self.errorMessage = nil
                         }
@@ -155,11 +155,11 @@ struct LoadingBypassWebView: View {
                             if self.errorMessage == errorMsg { // Only retry if error hasn't changed
                                 loadBypassUrl()
                             }
-                        }
-                    } else {
+                        }                    } else {
                         // Final fallback
                         print("⚠️ Max retries reached, using fallback URL")
-                        let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
+                        let domain = userData.domain ?? "vmart"
+                        let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
                         self.bypassUrl = fallbackUrl
                         self.errorMessage = nil
                     }
