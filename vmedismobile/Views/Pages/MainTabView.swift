@@ -79,12 +79,70 @@ struct MainTabView: View {
     }
 }
 
+// MARK: - Menu Data Models
+struct MenuItem: Identifiable {
+    let id = UUID()
+    let icon: String
+    let title: String
+    let route: String?
+    let subMenus: [SubMenuItem]?
+    
+    init(icon: String, title: String, route: String? = nil, subMenus: [SubMenuItem]? = nil) {
+        self.icon = icon
+        self.title = title
+        self.route = route
+        self.subMenus = subMenus
+    }
+}
+
+struct SubMenuItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let route: String
+}
+
 // MARK: - Profile View
 struct ProfileView: View {
     let userData: UserData
     @EnvironmentObject var appState: AppState
-    @State private var showingCustomer = false
-    @State private var showingLaporanPenjualanObat = false
+    @State private var expandedMenuIds: Set<UUID> = []
+    @State private var selectedRoute: String?
+    @State private var showingWebView = false
+    
+    // Menu structure based on provided data
+    let menuItems: [MenuItem] = [
+        MenuItem(icon: "person.3", title: "Customer", route: "customers"),
+        
+        MenuItem(icon: "person.text.rectangle", title: "Pendaftaran Klinik", subMenus: [
+            SubMenuItem(title: "Laporan Registrasi Pasien", route: "lapregistrasipasien"),
+            SubMenuItem(title: "Laporan Kunjungan Pasien", route: "lapkunjunganpasien")
+        ]),
+        
+        MenuItem(icon: "stethoscope", title: "Pelayanan Klinik", subMenus: [
+            SubMenuItem(title: "Laporan Janji Dengan Dokter", route: "lapjanjidengandokter")
+        ]),
+        
+        MenuItem(icon: "creditcard", title: "Billing Kasir", subMenus: [
+            SubMenuItem(title: "Laporan Piutang Klinik", route: "lappiutangklinik"),
+            SubMenuItem(title: "Laporan Pembayaran Kasir", route: "lappembayarankasir"),
+            SubMenuItem(title: "Laporan Penjualan Obat Klinik", route: "lappenjualanobatklinik"),
+            SubMenuItem(title: "Laporan Tagihan Jaminan", route: "laptagihanjaminan"),
+            SubMenuItem(title: "Laporan Pendapatan Petugas Medis", route: "lappendapatanpetugasmedis")
+        ]),
+        
+        MenuItem(icon: "pills", title: "Laporan Apotek", subMenus: [
+            SubMenuItem(title: "Laporan Pembelian", route: "lappembelianobat"),
+            SubMenuItem(title: "Laporan Hutang Obat", route: "laphutangobat"),
+            SubMenuItem(title: "Laporan Penjualan Obat", route: "lappenjualanobat"),
+            SubMenuItem(title: "Laporan Piutang Obat", route: "lappiutangobat"),
+            SubMenuItem(title: "Laporan Obat Stok Habis", route: "lapobatstokhabis"),
+            SubMenuItem(title: "Laporan Obat Expired", route: "lapobatexpired"),
+            SubMenuItem(title: "Laporan Obat Terlaris", route: "lapobatterlaris"),
+            SubMenuItem(title: "Laporan Stok Opname", route: "lapstokopname"),
+            SubMenuItem(title: "Laporan Stok Obat", route: "lapstokobat"),
+            SubMenuItem(title: "Laporan Pergantian Shift", route: "lappergantianshift")
+        ])
+    ]
     
     var body: some View {
         NavigationView {
@@ -128,17 +186,43 @@ struct ProfileView: View {
                                     .cornerRadius(6)
                             }
                         }
-                    }                    .padding()
+                    }
+                    .padding()
                     
-                    // Profile Options                    VStack(spacing: 0) {
-                        ProfileOptionRow(icon: "person.3", title: "Customer", action: {
-                            showingCustomer = true
-                        })
+                    // Menu Options with Accordion
+                    VStack(spacing: 0) {
+                        ForEach(menuItems) { menu in
+                            AccordionMenuRow(
+                                menu: menu,
+                                isExpanded: expandedMenuIds.contains(menu.id),
+                                onTap: {
+                                    if menu.subMenus != nil {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            if expandedMenuIds.contains(menu.id) {
+                                                expandedMenuIds.remove(menu.id)
+                                            } else {
+                                                expandedMenuIds.insert(menu.id)
+                                            }
+                                        }
+                                    } else if let route = menu.route {
+                                        selectedRoute = route
+                                        showingWebView = true
+                                    }
+                                },
+                                onSubMenuTap: { route in
+                                    selectedRoute = route
+                                    showingWebView = true
+                                }
+                            )
+                            
+                            if menu.id != menuItems.last?.id {
+                                Divider()
+                            }
+                        }
+                        
                         Divider()
-                        ProfileOptionRow(icon: "chart.bar.doc.horizontal", title: "Laporan Penjualan Obat", action: {
-                            showingLaporanPenjualanObat = true
-                        })
-                        Divider()
+                        
+                        // Logout Option
                         ProfileOptionRow(
                             icon: "rectangle.portrait.and.arrow.right",
                             title: "Logout",
@@ -149,19 +233,103 @@ struct ProfileView: View {
                     }
                     .background(Color.white)
                     .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)                }
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                }
                 .padding()
             }
-            .background(Color.gray.opacity(0.05))            .navigationTitle("Profile")
-            .sheet(isPresented: $showingCustomer) {
-                CustomerView(userData: userData)
-            }
-            .sheet(isPresented: $showingLaporanPenjualanObat) {
-                LaporanPenjualanObatView(userData: userData)
+            .background(Color.gray.opacity(0.05))
+            .navigationTitle("Profile")
+            .sheet(isPresented: $showingWebView) {
+                if let route = selectedRoute {
+                    ReportWebView(userData: userData, route: route)
+                }
             }
         }
     }
+}
 
+// MARK: - Accordion Menu Row
+struct AccordionMenuRow: View {
+    let menu: MenuItem
+    let isExpanded: Bool
+    let onTap: () -> Void
+    let onSubMenuTap: (String) -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Master Menu Button
+            Button(action: onTap) {
+                HStack {
+                    Image(systemName: menu.icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(.blue)
+                        .frame(width: 30)
+                    
+                    Text(menu.title)
+                        .font(.body)
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    if menu.subMenus != nil {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding()
+                .contentShape(Rectangle())
+            }
+            
+            // Sub Menus (Collapsible)
+            if let subMenus = menu.subMenus, isExpanded {
+                VStack(spacing: 0) {
+                    ForEach(subMenus) { subMenu in
+                        Button(action: {
+                            onSubMenuTap(subMenu.route)
+                        }) {
+                            HStack {
+                                // Indentation for sub menu
+                                Spacer()
+                                    .frame(width: 30)
+                                
+                                Circle()
+                                    .fill(Color.blue.opacity(0.3))
+                                    .frame(width: 6, height: 6)
+                                
+                                Text(subMenu.title)
+                                    .font(.subheadline)
+                                    .foregroundColor(.black)
+                                    .padding(.leading, 8)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .background(Color.gray.opacity(0.05))
+                            .contentShape(Rectangle())
+                        }
+                        
+                        if subMenu.id != subMenus.last?.id {
+                            Divider()
+                                .padding(.leading, 46)
+                        }
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+}
 
 // MARK: - Profile Option Row
 struct ProfileOptionRow: View {
@@ -192,15 +360,16 @@ struct ProfileOptionRow: View {
     }
 }
 
-// MARK: - Customer View
-struct CustomerView: View {
+// MARK: - Report WebView
+struct ReportWebView: View {
     let userData: UserData
+    let route: String
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
-                .navigationTitle("Customer")
+            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=\(route)")
+                .navigationTitle(getTitle(for: route))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -211,25 +380,29 @@ struct CustomerView: View {
                 }
         }
     }
-}
-
-// MARK: - Laporan Penjualan Obat View
-struct LaporanPenjualanObatView: View {
-    let userData: UserData
-    @Environment(\.dismiss) private var dismiss
     
-    var body: some View {
-        NavigationView {
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=lappenjualanobat")
-                .navigationTitle("Laporan Penjualan Obat")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Close") {
-                            dismiss()
-                        }
-                    }
-                }
+    func getTitle(for route: String) -> String {
+        switch route {
+        case "customers": return "Customer"
+        case "lapregistrasipasien": return "Registrasi Pasien"
+        case "lapkunjunganpasien": return "Kunjungan Pasien"
+        case "lapjanjidengandokter": return "Janji Dengan Dokter"
+        case "lappiutangklinik": return "Piutang Klinik"
+        case "lappembayarankasir": return "Pembayaran Kasir"
+        case "lappenjualanobatklinik": return "Penjualan Obat Klinik"
+        case "laptagihanjaminan": return "Tagihan Jaminan"
+        case "lappendapatanpetugasmedis": return "Pendapatan Petugas Medis"
+        case "lappembelianobat": return "Pembelian Obat"
+        case "laphutangobat": return "Hutang Obat"
+        case "lappenjualanobat": return "Penjualan Obat"
+        case "lappiutangobat": return "Piutang Obat"
+        case "lapobatstokhabis": return "Obat Stok Habis"
+        case "lapobatexpired": return "Obat Expired"
+        case "lapobatterlaris": return "Obat Terlaris"
+        case "lapstokopname": return "Stok Opname"
+        case "lapstokobat": return "Stok Obat"
+        case "lappergantianshift": return "Pergantian Shift"
+        default: return "Laporan"
         }
     }
 }
