@@ -5,8 +5,6 @@ import WebKit
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
     let destinationUrl: String
-    @State private var isLoading = true
-    @State private var errorMessage: String?
     
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
@@ -47,7 +45,6 @@ struct BypassWebView: UIViewRepresentable {
 struct LoadingBypassWebView: View {
     let userData: UserData
     let destinationUrl: String
-    @State private var isLoading = true
     @State private var bypassUrl: URL?
     @State private var errorMessage: String?
     @State private var retryCount = 0
@@ -96,18 +93,9 @@ struct LoadingBypassWebView: View {
                 .padding()
             } else if let url = bypassUrl {
                 WebView(url: url)
-            } else {
-                // Loading state
-                VStack {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(1.5)
-                    
-                    Text("Loading...")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .padding(.top)
-                }            }        }        .onAppear {
+            }
+        }
+        .onAppear {
             print("LoadingBypassWebView appeared with URL: \(destinationUrl)")
             loadBypassUrl()
         }        
@@ -117,13 +105,10 @@ struct LoadingBypassWebView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 loadBypassUrl()
             }
-        }
-    }
+        }    }
       private func loadBypassUrl() {
-        isLoading = true
         errorMessage = nil
         bypassUrl = nil
-        // Don't reset retry count on refresh, only on fresh load
         
         print("Loading bypass URL for: \(destinationUrl)")
         
@@ -136,7 +121,6 @@ struct LoadingBypassWebView: View {
                 
                 await MainActor.run {
                     self.bypassUrl = url
-                    self.isLoading = false
                     print("✅ Successfully loaded bypass URL: \(url)")
                 }
             } catch {
@@ -144,7 +128,6 @@ struct LoadingBypassWebView: View {
                     retryCount += 1
                     let errorMsg = "Authentication setup failed (\(retryCount)/\(maxRetries))"
                     self.errorMessage = errorMsg
-                    self.isLoading = false
                     print("❌ Bypass login error (attempt \(retryCount)): \(error)")
                     
                     // Auto-retry for first few attempts
