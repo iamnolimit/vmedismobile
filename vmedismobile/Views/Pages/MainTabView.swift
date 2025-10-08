@@ -106,8 +106,6 @@ struct ProfileView: View {
     let userData: UserData
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
-    @State private var selectedRoute: String?
-    @State private var navigationPath = NavigationPath()
     
     // Menu structure based on provided data
     let menuItems: [MenuItem] = [
@@ -142,9 +140,8 @@ struct ProfileView: View {
             SubMenuItem(title: "Laporan Stok Obat", route: "lapstokobat"),
             SubMenuItem(title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
-    ]
-      var body: some View {
-        NavigationStack(path: $navigationPath) {
+    ]    var body: some View {
+        NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
                     // Profile Header
@@ -194,21 +191,15 @@ struct ProfileView: View {
                             AccordionMenuRow(
                                 menu: menu,
                                 isExpanded: expandedMenuIds.contains(menu.id),
-                                onTap: {
-                                    if menu.subMenus != nil {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            if expandedMenuIds.contains(menu.id) {
-                                                expandedMenuIds.remove(menu.id)
-                                            } else {
-                                                expandedMenuIds.insert(menu.id)
-                                            }
+                                userData: userData,
+                                onToggle: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        if expandedMenuIds.contains(menu.id) {
+                                            expandedMenuIds.remove(menu.id)
+                                        } else {
+                                            expandedMenuIds.insert(menu.id)
                                         }
-                                    } else if let route = menu.route {
-                                        navigationPath.append(route)
                                     }
-                                },
-                                onSubMenuTap: { route in
-                                    navigationPath.append(route)
                                 }
                             )
                             
@@ -236,10 +227,9 @@ struct ProfileView: View {
             }
             .background(Color.gray.opacity(0.05))
             .navigationTitle("Profile")
-            .navigationDestination(for: String.self) { route in
-                ReportPageView(userData: userData, route: route)
-            }
+            .navigationBarTitleDisplayMode(.inline)
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
     }
 }
@@ -248,47 +238,30 @@ struct ProfileView: View {
 struct AccordionMenuRow: View {
     let menu: MenuItem
     let isExpanded: Bool
-    let onTap: () -> Void
-    let onSubMenuTap: (String) -> Void
+    let userData: UserData
+    let onToggle: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
             // Master Menu Button
-            Button(action: onTap) {
-                HStack {
-                    Image(systemName: menu.icon)
-                        .font(.system(size: 20))
-                        .foregroundColor(.blue)
-                        .frame(width: 30)
-                    
-                    Text(menu.title)
-                        .font(.body)
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                    
-                    if menu.subMenus != nil {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                    } else {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
+            if menu.subMenus != nil {
+                // Menu with submenu - use button to toggle
+                Button(action: onToggle) {
+                    MenuRowContent(menu: menu, isExpanded: isExpanded)
                 }
-                .padding()
-                .contentShape(Rectangle())
+            } else if let route = menu.route {
+                // Menu without submenu - use NavigationLink
+                NavigationLink(destination: ReportPageView(userData: userData, route: route)) {
+                    MenuRowContent(menu: menu, isExpanded: false)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             
             // Sub Menus (Collapsible)
             if let subMenus = menu.subMenus, isExpanded {
                 VStack(spacing: 0) {
                     ForEach(subMenus) { subMenu in
-                        Button(action: {
-                            onSubMenuTap(subMenu.route)
-                        }) {
+                        NavigationLink(destination: ReportPageView(userData: userData, route: subMenu.route)) {
                             HStack {
                                 // Indentation for sub menu
                                 Spacer()
@@ -314,6 +287,7 @@ struct AccordionMenuRow: View {
                             .background(Color.gray.opacity(0.05))
                             .contentShape(Rectangle())
                         }
+                        .buttonStyle(PlainButtonStyle())
                         
                         if subMenu.id != subMenus.last?.id {
                             Divider()
@@ -324,6 +298,40 @@ struct AccordionMenuRow: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+}
+
+// MARK: - Menu Row Content (Reusable)
+struct MenuRowContent: View {
+    let menu: MenuItem
+    let isExpanded: Bool
+    
+    var body: some View {
+        HStack {
+            Image(systemName: menu.icon)
+                .font(.system(size: 20))
+                .foregroundColor(.blue)
+                .frame(width: 30)
+            
+            Text(menu.title)
+                .font(.body)
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            if menu.subMenus != nil {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding()
+        .contentShape(Rectangle())
     }
 }
 
