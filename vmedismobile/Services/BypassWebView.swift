@@ -50,8 +50,7 @@ struct LoadingBypassWebView: View {
     @State private var retryCount = 0
     
     private let maxRetries = 2
-    
-    var body: some View {
+      var body: some View {
         Group {
             if let error = errorMessage {
                 VStack {
@@ -76,7 +75,8 @@ struct LoadingBypassWebView: View {
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(8)                    } else {
+                        .cornerRadius(8)
+                    } else {
                         // Final fallback after max retries
                         Button("Continue with Standard Login") {
                             let domain = userData.domain ?? "vmart"
@@ -93,19 +93,23 @@ struct LoadingBypassWebView: View {
                 .padding()
             } else if let url = bypassUrl {
                 WebView(url: url)
+            } else {
+                // Empty placeholder while waiting for URL (web handles loading)
+                Color.white
             }
         }
         .onAppear {
             print("LoadingBypassWebView appeared with URL: \(destinationUrl)")
             loadBypassUrl()
-        }        
+        }
         .onChange(of: userData.id) { _ in
             // Refresh WebView when userData changes (after login)
             print("UserData changed, reloading...")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 loadBypassUrl()
             }
-        }    }
+        }
+    }
       private func loadBypassUrl() {
         errorMessage = nil
         bypassUrl = nil
