@@ -91,7 +91,7 @@ struct LoginPageView: View {
                     title: "Subdomain",
                     text: $subdomain,
                     placeholder: "Masukkan nama subdomain",
-                    suffix: ".vmedismart.com",
+                    suffix: ".vmedis.com",
                     icon: "building.2",
                     accentColor: accentColor
                 )

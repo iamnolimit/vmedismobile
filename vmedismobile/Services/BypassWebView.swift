@@ -34,7 +34,7 @@ struct BypassWebView: UIViewRepresentable {
                 print("Error generating bypass URL: \(error)")
                 await MainActor.run {
                     // Fallback to original URL if bypass fails
-                    let fallbackUrl = URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!
+                    let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
                     let request = URLRequest(url: fallbackUrl)
                     webView.load(request)
                 }
@@ -83,7 +83,7 @@ struct LoadingBypassWebView: View {
                     } else {
                         // Final fallback after max retries
                         Button("Continue with Standard Login") {
-                            let fallbackUrl = URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!
+                            let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
                             self.bypassUrl = fallbackUrl
                             self.errorMessage = nil
                         }
@@ -159,7 +159,7 @@ struct LoadingBypassWebView: View {
                     } else {
                         // Final fallback
                         print("⚠️ Max retries reached, using fallback URL")
-                        let fallbackUrl = URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!
+                        let fallbackUrl = URL(string: "https://v3.vmedis.com/vmart/\(destinationUrl)")!
                         self.bypassUrl = fallbackUrl
                         self.errorMessage = nil
                     }
