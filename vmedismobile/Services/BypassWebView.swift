@@ -108,12 +108,11 @@ struct LoadingBypassWebView: View {
                         .foregroundColor(.gray)
                         .padding(.top)
                 }
-            }        }
-        .onAppear {
+            }        }        .onAppear {
             print("LoadingBypassWebView appeared with URL: \(destinationUrl)")
             loadBypassUrl()
         }        
-        .onChange(of: userData.id) { _ in
+        .onChange(of: userData.id) {
             // Refresh WebView when userData changes (after login)
             print("UserData changed, reloading...")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

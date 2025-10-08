@@ -1,1 +1,138 @@
-// File: App/AppState.swift - With Persistent Storageimport SwiftUIclass AppState: ObservableObject {    @Published var isLoggedIn = false    @Published var userData: UserData?        private let userDefaultsKey = "isUserLoggedIn"    private let userDataKey = "userData"        init() {        loadLoginState()    }        func login(with userData: UserData) {        self.userData = userData        self.isLoggedIn = true        saveLoginState()    }        func logout() {        self.userData = nil        self.isLoggedIn = false        clearLoginState()    }        // MARK: - Persistent Storage    private func saveLoginState() {        // Save login status        UserDefaults.standard.set(true, forKey: userDefaultsKey)                // Save user data        if let userData = userData {            do {                let encoded = try JSONEncoder().encode(userData)                UserDefaults.standard.set(encoded, forKey: userDataKey)                                // Save sensitive data (token) to Keychain if available                if let token = userData.token {                    KeychainHelper.save(token, forKey: "userToken")                }                                print("✅ Login state saved to storage")            } catch {                print("❌ Failed to save user data: \(error)")            }        }    }        private func loadLoginState() {        // Load login status        let isLoggedIn = UserDefaults.standard.bool(forKey: userDefaultsKey)                if isLoggedIn {            // Load user data            if let data = UserDefaults.standard.data(forKey: userDataKey) {                do {                    let userData = try JSONDecoder().decode(UserData.self, from: data)                                        // Load token from Keychain                    if let token = KeychainHelper.load(forKey: "userToken") {                        // Update userData with token from keychain                        var updatedUserData = userData                        // Note: Since UserData properties are let, we'll use the stored token                    }                                        self.userData = userData                    self.isLoggedIn = true                    print("✅ Login state loaded from storage")                    print("User: \(userData.username ?? "Unknown")")                } catch {                    print("❌ Failed to load user data: \(error)")                    clearLoginState()                }            } else {                clearLoginState()            }        }    }        private func clearLoginState() {        UserDefaults.standard.removeObject(forKey: userDefaultsKey)        UserDefaults.standard.removeObject(forKey: userDataKey)        KeychainHelper.delete(forKey: "userToken")        print("🗑️ Login state cleared from storage")    }}// MARK: - Keychain Helperclass KeychainHelper {    static func save(_ value: String, forKey key: String) {        let data = Data(value.utf8)        let query: [String: Any] = [            kSecClass as String: kSecClassGenericPassword,            kSecAttrAccount as String: key,            kSecValueData as String: data        ]                // Delete any existing item        SecItemDelete(query as CFDictionary)                // Add new item        let status = SecItemAdd(query as CFDictionary, nil)        if status == errSecSuccess {            print("✅ Saved \(key) to Keychain")        } else {            print("❌ Failed to save \(key) to Keychain: \(status)")        }    }        static func load(forKey key: String) -> String? {        let query: [String: Any] = [            kSecClass as String: kSecClassGenericPassword,            kSecAttrAccount as String: key,            kSecReturnData as String: true,            kSecMatchLimit as String: kSecMatchLimitOne        ]                var item: CFTypeRef?        let status = SecItemCopyMatching(query as CFDictionary, &item)                if status == errSecSuccess,           let data = item as? Data,           let value = String(data: data, encoding: .utf8) {            return value        } else {            print("❌ Failed to load \(key) from Keychain: \(status)")            return nil        }    }        static func delete(forKey key: String) {        let query: [String: Any] = [            kSecClass as String: kSecClassGenericPassword,            kSecAttrAccount as String: key        ]                let status = SecItemDelete(query as CFDictionary)        if status == errSecSuccess {            print("✅ Deleted \(key) from Keychain")        }    }}
+// File: App/AppState.swift - With Persistent Storage
+import SwiftUI
+
+class AppState: ObservableObject {
+    @Published var isLoggedIn = false
+    @Published var userData: UserData?
+    
+    private let userDefaultsKey = "isUserLoggedIn"
+    private let userDataKey = "userData"
+    
+    init() {
+        loadLoginState()
+    }
+    
+    func login(with userData: UserData) {
+        self.userData = userData
+        self.isLoggedIn = true
+        saveLoginState()
+    }
+    
+    func logout() {
+        self.userData = nil
+        self.isLoggedIn = false
+        clearLoginState()
+    }
+    
+    // MARK: - Persistent Storage
+    private func saveLoginState() {
+        // Save login status
+        UserDefaults.standard.set(true, forKey: userDefaultsKey)
+        
+        // Save user data
+        if let userData = userData {
+            do {
+                let encoded = try JSONEncoder().encode(userData)
+                UserDefaults.standard.set(encoded, forKey: userDataKey)
+                
+                // Save sensitive data (token) to Keychain if available
+                if let token = userData.token {
+                    KeychainHelper.save(token, forKey: "userToken")
+                }
+                
+                print("✅ Login state saved to storage")
+            } catch {
+                print("❌ Failed to save user data: \(error)")
+            }
+        }
+    }
+    
+    private func loadLoginState() {
+        // Load login status
+        let isLoggedIn = UserDefaults.standard.bool(forKey: userDefaultsKey)
+        
+        if isLoggedIn {
+            // Load user data
+            if let data = UserDefaults.standard.data(forKey: userDataKey) {                do {
+                    let userData = try JSONDecoder().decode(UserData.self, from: data)
+                    
+                    // Load token from Keychain (check if exists but don't need to use)
+                    _ = KeychainHelper.load(forKey: "userToken")
+                    
+                    self.userData = userData
+                    self.isLoggedIn = true
+                    print("✅ Login state loaded from storage")
+                    print("User: \(userData.username ?? "Unknown")")
+                } catch {
+                    print("❌ Failed to load user data: \(error)")
+                    clearLoginState()
+                }
+            } else {
+                clearLoginState()
+            }
+        }
+    }
+    
+    private func clearLoginState() {
+        UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: userDataKey)
+        KeychainHelper.delete(forKey: "userToken")
+        print("🗑️ Login state cleared from storage")
+    }
+}
+
+// MARK: - Keychain Helper
+class KeychainHelper {
+    static func save(_ value: String, forKey key: String) {
+        let data = Data(value.utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecValueData as String: data
+        ]
+        
+        // Delete any existing item
+        SecItemDelete(query as CFDictionary)
+        
+        // Add new item
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecSuccess {
+            print("✅ Saved \(key) to Keychain")
+        } else {
+            print("❌ Failed to save \(key) to Keychain: \(status)")
+        }
+    }
+    
+    static func load(forKey key: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        
+        if status == errSecSuccess,
+           let data = item as? Data,
+           let value = String(data: data, encoding: .utf8) {
+            return value
+        } else {
+            print("❌ Failed to load \(key) from Keychain: \(status)")
+            return nil
+        }
+    }
+    
+    static func delete(forKey key: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: key
+        ]
+        
+        let status = SecItemDelete(query as CFDictionary)
+        if status == errSecSuccess {
+            print("✅ Deleted \(key) from Keychain")
+        }
+    }
+}
