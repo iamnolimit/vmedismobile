@@ -4,7 +4,8 @@ import WebKit
 
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
-    let destinationUrl: String    func makeUIView(context: Context) -> WKWebView {
+    let destinationUrl: String    
+    func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
         
         // Disable text selection
