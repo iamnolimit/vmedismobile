@@ -5,11 +5,57 @@ import WebKit
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
     let destinationUrl: String
-    
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
+        
+        // Disable text selection
+        webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        
+        // Inject CSS to disable text selection
+        let css = """
+        * {
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+        """
+        
+        let cssString = "var style = document.createElement('style'); style.innerHTML = '\(css)'; document.head.appendChild(style);"
+        let userScript = WKUserScript(source: cssString, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        webView.configuration.userContentController.addUserScript(userScript)
+        
+        // Add pull to refresh
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
+        webView.scrollView.addSubview(refreshControl)
+        webView.scrollView.bounces = true
+        
         loadBypassUrl(webView: webView)
         return webView
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject {
+        var parent: BypassWebView
+        
+        init(_ parent: BypassWebView) {
+            self.parent = parent
+        }
+        
+        @objc func handleRefresh(_ refreshControl: UIRefreshControl) {
+            // Reload the current page
+            if let webView = refreshControl.superview?.superview as? WKWebView {
+                webView.reload()
+                
+                // Stop refresh animation after delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    refreshControl.endRefreshing()
+                }
+            }
+        }
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
