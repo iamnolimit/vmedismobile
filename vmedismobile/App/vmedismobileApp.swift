@@ -10,9 +10,11 @@ struct vmedismobileApp: App {
             if appState.isLoggedIn, let userData = appState.userData {
                 MainTabView(userData: userData)
                     .environmentObject(appState)
+                    .preferredColorScheme(.light) // Force light mode
             } else {
                 ContentView()
                     .environmentObject(appState)
+                    .preferredColorScheme(.light) // Force light mode
             }
         }
     }

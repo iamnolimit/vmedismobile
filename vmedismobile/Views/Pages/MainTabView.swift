@@ -5,8 +5,7 @@ struct MainTabView: View {
     let userData: UserData
     @State private var selectedTab = 0
     @State private var refreshId = UUID()
-    
-    var body: some View {        TabView(selection: $selectedTab) {
+      var body: some View {        TabView(selection: $selectedTab) {
             // 1. Home Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
                 .id(refreshId)
@@ -51,6 +50,7 @@ struct MainTabView: View {
                 .tag(4)
               }
         .accentColor(.blue)
+        .preferredColorScheme(.light) // Force light mode for all tabs
         .onAppear {
             // Force refresh all WebViews when MainTabView appears (after login)
             refreshId = UUID()
@@ -107,7 +107,7 @@ struct ProfileView: View {
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
     @State private var selectedRoute: String?
-    @State private var showingWebView = false
+    @State private var navigationPath = NavigationPath()
     
     // Menu structure based on provided data
     let menuItems: [MenuItem] = [
@@ -143,9 +143,8 @@ struct ProfileView: View {
             SubMenuItem(title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
     ]
-    
-    var body: some View {
-        NavigationView {
+      var body: some View {
+        NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(spacing: 20) {
                     // Profile Header
@@ -205,13 +204,11 @@ struct ProfileView: View {
                                             }
                                         }
                                     } else if let route = menu.route {
-                                        selectedRoute = route
-                                        showingWebView = true
+                                        navigationPath.append(route)
                                     }
                                 },
                                 onSubMenuTap: { route in
-                                    selectedRoute = route
-                                    showingWebView = true
+                                    navigationPath.append(route)
                                 }
                             )
                             
@@ -239,12 +236,11 @@ struct ProfileView: View {
             }
             .background(Color.gray.opacity(0.05))
             .navigationTitle("Profile")
-            .sheet(isPresented: $showingWebView) {
-                if let route = selectedRoute {
-                    ReportWebView(userData: userData, route: route)
-                }
+            .navigationDestination(for: String.self) { route in
+                ReportPageView(userData: userData, route: route)
             }
         }
+        .preferredColorScheme(.light) // Force light mode
     }
 }
 
@@ -360,41 +356,33 @@ struct ProfileOptionRow: View {
     }
 }
 
-// MARK: - Report WebView
-struct ReportWebView: View {
+// MARK: - Report Page View (Full Page Navigation)
+struct ReportPageView: View {
     let userData: UserData
     let route: String
-    @Environment(\.dismiss) private var dismiss
     @State private var refreshId = UUID()
     
     var body: some View {
-        NavigationView {
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=\(route)")
-                .id(refreshId) // Force refresh with unique ID
-                .navigationTitle(getTitle(for: route))
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Close") {
-                            dismiss()
-                        }
-                    }
-                    
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            // Force refresh WebView
-                            refreshId = UUID()
-                        }) {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.blue)
-                        }
+        LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=\(route)")
+            .id(refreshId) // Force refresh with unique ID
+            .navigationTitle(getTitle(for: route))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        // Force refresh WebView
+                        refreshId = UUID()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.blue)
                     }
                 }
-        }
-        .onAppear {
-            // Force fresh load when sheet appears
-            refreshId = UUID()
-        }
+            }
+            .preferredColorScheme(.light) // Force light mode
+            .onAppear {
+                // Force fresh load when page appears
+                refreshId = UUID()
+            }
     }
     
     func getTitle(for route: String) -> String {
