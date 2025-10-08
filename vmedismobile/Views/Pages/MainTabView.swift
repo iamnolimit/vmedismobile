@@ -140,7 +140,9 @@ struct ProfileView: View {
             SubMenuItem(title: "Laporan Stok Obat", route: "lapstokobat"),
             SubMenuItem(title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
-    ]    var body: some View {
+    ];
+    
+    var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
