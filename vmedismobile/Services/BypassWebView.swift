@@ -97,13 +97,25 @@ struct LoadingBypassWebView: View {
             } else if let url = bypassUrl {
                 WebView(url: url)
             } else {
-                // Should not reach here, but provide fallback
-                WebView(url: URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!)
+                // Loading state
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .scaleEffect(1.5)
+                    
+                    Text("Loading...")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.top)
+                }
             }        }
         .onAppear {
+            print("LoadingBypassWebView appeared with URL: \(destinationUrl)")
             loadBypassUrl()
-        }        .onChange(of: userData.id) { _ in
+        }        
+        .onChange(of: userData.id) { _ in
             // Refresh WebView when userData changes (after login)
+            print("UserData changed, reloading...")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 loadBypassUrl()
             }
@@ -113,7 +125,9 @@ struct LoadingBypassWebView: View {
         isLoading = true
         errorMessage = nil
         bypassUrl = nil
-        retryCount = 0 // Reset retry count on fresh load
+        // Don't reset retry count on refresh, only on fresh load
+        
+        print("Loading bypass URL for: \(destinationUrl)")
         
         Task {
             do {
@@ -125,14 +139,15 @@ struct LoadingBypassWebView: View {
                 await MainActor.run {
                     self.bypassUrl = url
                     self.isLoading = false
-                    print("Successfully loaded bypass URL: \(url)")
+                    print("✅ Successfully loaded bypass URL: \(url)")
                 }
             } catch {
                 await MainActor.run {
+                    retryCount += 1
                     let errorMsg = "Authentication setup failed (\(retryCount)/\(maxRetries))"
                     self.errorMessage = errorMsg
                     self.isLoading = false
-                    print("Bypass login error (attempt \(retryCount)): \(error)")
+                    print("❌ Bypass login error (attempt \(retryCount)): \(error)")
                     
                     // Auto-retry for first few attempts
                     if retryCount < maxRetries {
@@ -141,6 +156,12 @@ struct LoadingBypassWebView: View {
                                 loadBypassUrl()
                             }
                         }
+                    } else {
+                        // Final fallback
+                        print("⚠️ Max retries reached, using fallback URL")
+                        let fallbackUrl = URL(string: "https://v3.vmedismart.com/vmart/\(destinationUrl)")!
+                        self.bypassUrl = fallbackUrl
+                        self.errorMessage = nil
                     }
                 }
             }

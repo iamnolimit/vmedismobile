@@ -365,10 +365,12 @@ struct ReportWebView: View {
     let userData: UserData
     let route: String
     @Environment(\.dismiss) private var dismiss
+    @State private var refreshId = UUID()
     
     var body: some View {
         NavigationView {
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=\(route)")
+                .id(refreshId) // Force refresh with unique ID
                 .navigationTitle(getTitle(for: route))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -377,7 +379,21 @@ struct ReportWebView: View {
                             dismiss()
                         }
                     }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            // Force refresh WebView
+                            refreshId = UUID()
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                                .foregroundColor(.blue)
+                        }
+                    }
                 }
+        }
+        .onAppear {
+            // Force fresh load when sheet appears
+            refreshId = UUID()
         }
     }
     
