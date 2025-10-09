@@ -29,9 +29,11 @@ struct WebView: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.bounces = true
         webView.allowsBackForwardNavigationGestures = false
-        
-        // Lightweight CSS injection
-        let css = "* { -webkit-user-select: none; -webkit-touch-callout: none; user-select: none; }"
+          // Lightweight CSS injection - disable text selection & hide web loading
+        let css = """
+        * { -webkit-user-select: none; -webkit-touch-callout: none; user-select: none; }
+        [class*='splash'], [class*='loading'], [class*='spinner'] { display: none !important; }
+        """
         let cssScript = "var s=document.createElement('style');s.innerHTML='\(css)';document.head.appendChild(s);"
         let userScript = WKUserScript(source: cssScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(userScript)
