@@ -11,14 +11,13 @@ import WebKit
 // MARK: - Optimized WebView for iOS 16+
 struct WebView: UIViewRepresentable {
     let url: URL
-    
-    func makeUIView(context: Context) -> WKWebView {
+      func makeUIView(context: Context) -> WKWebView {
         // Lightweight configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = .all
         
-        let preferences = WKWebPreferences()
+        let preferences = WKPreferences()
         preferences.javaScriptCanOpenWindowsAutomatically = false
         config.preferences = preferences
         
