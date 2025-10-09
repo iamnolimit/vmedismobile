@@ -53,8 +53,7 @@ struct MainTabView: View {
             setupTabBarAppearance()
         }
     }
-    
-    private func setupTabBarAppearance() {
+      private func setupTabBarAppearance() {
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithOpaqueBackground()
         tabBarAppearance.backgroundColor = UIColor.white
@@ -71,13 +70,12 @@ struct MainTabView: View {
             .foregroundColor: UIColor.systemGray
         ]
         
+        // iOS 16+ uses only scrollEdgeAppearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
-        if #available(iOS 15.0, *) {
-            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-        }
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
     }
 }
-}
+
 
 // MARK: - Menu Data Models
 struct MenuItem: Identifiable {

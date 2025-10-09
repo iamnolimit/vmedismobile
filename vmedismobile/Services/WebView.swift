@@ -8,19 +8,24 @@
 import SwiftUI
 import WebKit
 
-// MARK: - Optimized WebView for iOS 15.6+
+// MARK: - Optimized WebView for iOS 16+
 struct WebView: UIViewRepresentable {
     let url: URL
     
     func makeUIView(context: Context) -> WKWebView {
-        // Lightweight configuration
+        // Lightweight configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = .all
         
-        let preferences = WKPreferences()
+        let preferences = WKWebPreferences()
         preferences.javaScriptCanOpenWindowsAutomatically = false
         config.preferences = preferences
+        
+        // iOS 16+ optimizations
+        if #available(iOS 16.0, *) {
+            config.preferences.isElementFullscreenEnabled = false
+        }
         
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.bounces = true
@@ -39,8 +44,11 @@ struct WebView: UIViewRepresentable {
         context.coordinator.refreshControl = refreshControl
         context.coordinator.webView = webView
         
-        // Load with cache policy
-        let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        // Load with cache policy and timeout
+        var request = URLRequest(url: url)
+        request.cachePolicy = .returnCacheDataElseLoad
+        request.timeoutInterval = 30
+        
         webView.load(request)
         
         return webView

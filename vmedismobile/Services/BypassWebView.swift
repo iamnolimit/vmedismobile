@@ -7,18 +7,20 @@ struct BypassWebView: UIViewRepresentable {
     let destinationUrl: String
     
     func makeUIView(context: Context) -> WKWebView {
-        // Optimize WKWebView configuration for iOS 15.6
+        // Optimize WKWebView configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = .all
         
         // Lightweight preferences
-        let preferences = WKPreferences()
+        let preferences = WKWebpreferences()
         preferences.javaScriptCanOpenWindowsAutomatically = false
         config.preferences = preferences
         
-        // Process pool for better memory management
-        config.processPool = WKProcessPool()
+        // iOS 16+ optimizations
+        if #available(iOS 16.0, *) {
+            config.preferences.isElementFullscreenEnabled = false
+        }
         
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.bounces = true
@@ -85,7 +87,10 @@ struct BypassWebView: UIViewRepresentable {
                     
                     guard !Task.isCancelled else { return }
                     
-                    let request = URLRequest(url: bypassUrl, cachePolicy: .reloadIgnoringLocalCacheData)
+                    var request = URLRequest(url: bypassUrl)
+                    request.cachePolicy = .reloadIgnoringLocalCacheData
+                    request.timeoutInterval = 30
+                    
                     webView?.load(request)
                     
                 } catch {
@@ -94,7 +99,10 @@ struct BypassWebView: UIViewRepresentable {
                     print("⚠️ Bypass error, using fallback: \(error)")
                     let domain = parent.userData.domain ?? "vmart"
                     if let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(parent.destinationUrl)") {
-                        let request = URLRequest(url: fallbackUrl, cachePolicy: .reloadIgnoringLocalCacheData)
+                        var request = URLRequest(url: fallbackUrl)
+                        request.cachePolicy = .reloadIgnoringLocalCacheData
+                        request.timeoutInterval = 30
+                        
                         webView?.load(request)
                     }
                 }
