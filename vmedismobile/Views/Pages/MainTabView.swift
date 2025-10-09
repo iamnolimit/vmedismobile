@@ -4,11 +4,11 @@ import SwiftUI
 struct MainTabView: View {
     let userData: UserData
     @State private var selectedTab = 0
-    @State private var refreshId = UUID()
-      var body: some View {        TabView(selection: $selectedTab) {
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
             // 1. Home Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
-                .id(refreshId)
                 .tabItem {
                     Image(systemName: selectedTab == 0 ? "house.fill" : "house")
                     Text("Home")
@@ -17,7 +17,6 @@ struct MainTabView: View {
             
             // 2. Obat Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=products")
-                .id(refreshId)
                 .tabItem {
                     Image(systemName: selectedTab == 1 ? "pills.fill" : "pills")
                     Text("Obat")
@@ -26,21 +25,20 @@ struct MainTabView: View {
             
             // 3. Keuangan Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
-                .id(refreshId)
                 .tabItem {
                     Image(systemName: selectedTab == 2 ? "banknote.fill" : "banknote")
                     Text("Keuangan")
                 }
                 .tag(2)
-                  // 4. Forecast Tab
+            
+            // 4. Forecast Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
-                .id(refreshId)
                 .tabItem {
                     Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                     Text("Forecast")
                 }
                 .tag(3)
-                
+            
             // 5. Account Tab - Using native ProfileView with Customer menu
             ProfileView(userData: userData)
                 .tabItem {
@@ -48,35 +46,37 @@ struct MainTabView: View {
                     Text("Akun")
                 }
                 .tag(4)
-              }
-        .accentColor(.blue)
-        .preferredColorScheme(.light) // Force light mode for all tabs
-        .onAppear {
-            // Force refresh all WebViews when MainTabView appears (after login)
-            refreshId = UUID()
         }
+        .accentColor(.blue)
+        .preferredColorScheme(.light)
         .onAppear {
-            // Customize tab bar appearance
-            let tabBarAppearance = UITabBarAppearance()
-            tabBarAppearance.configureWithOpaqueBackground()
-            tabBarAppearance.backgroundColor = UIColor.white
-            
-            // Selected item color
-            tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemBlue
-            tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor.systemBlue
-            ]
-            
-            // Unselected item color
-            tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
-            tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor.systemGray
-            ]
-            
-            UITabBar.appearance().standardAppearance = tabBarAppearance
+            setupTabBarAppearance()
+        }
+    }
+    
+    private func setupTabBarAppearance() {
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithOpaqueBackground()
+        tabBarAppearance.backgroundColor = UIColor.white
+        
+        // Selected item
+        tabBarAppearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemBlue
+        tabBarAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor.systemBlue
+        ]
+        
+        // Unselected item
+        tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+        tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor.systemGray
+        ]
+        
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        if #available(iOS 15.0, *) {
             UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         }
     }
+}
 }
 
 // MARK: - Menu Data Models

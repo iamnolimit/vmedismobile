@@ -5,196 +5,140 @@ import WebKit
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
     let destinationUrl: String
+    
     func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
+        // Optimize WKWebView configuration for iOS 15.6
+        let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = .all
         
-        // Disable text selection
-        webView.configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        // Lightweight preferences
+        let preferences = WKPreferences()
+        preferences.javaScriptCanOpenWindowsAutomatically = false
+        config.preferences = preferences
         
-        // Inject CSS to disable text selection
-        let css = """
-        * {
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            user-select: none;
-        }
-        """
+        // Process pool for better memory management
+        config.processPool = WKProcessPool()
         
-        let cssString = "var style = document.createElement('style'); style.innerHTML = '\(css)'; document.head.appendChild(style);"
-        let userScript = WKUserScript(source: cssString, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.scrollView.bounces = true
+        webView.allowsBackForwardNavigationGestures = false
+        
+        // Inject CSS to disable text selection (lightweight)
+        let css = "* { -webkit-user-select: none; -webkit-touch-callout: none; user-select: none; }"
+        let cssScript = "var s=document.createElement('style');s.innerHTML='\(css)';document.head.appendChild(s);"
+        let userScript = WKUserScript(source: cssScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(userScript)
         
         // Add pull to refresh
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(context.coordinator, action: #selector(Coordinator.handleRefresh(_:)), for: .valueChanged)
         webView.scrollView.addSubview(refreshControl)
-        webView.scrollView.bounces = true
+        context.coordinator.refreshControl = refreshControl
         
-        loadBypassUrl(webView: webView)
+        // Store webView reference
+        context.coordinator.webView = webView
+        
+        // Load URL
+        context.coordinator.loadBypassUrl()
+        
         return webView
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(parent: self)
     }
     
     class Coordinator: NSObject {
         var parent: BypassWebView
+        weak var webView: WKWebView?
+        weak var refreshControl: UIRefreshControl?
+        var loadTask: Task<Void, Never>?
         
-        init(_ parent: BypassWebView) {
+        init(parent: BypassWebView) {
             self.parent = parent
         }
         
+        deinit {
+            // Cancel any ongoing tasks
+            loadTask?.cancel()
+            webView?.configuration.userContentController.removeAllUserScripts()
+        }
+        
         @objc func handleRefresh(_ refreshControl: UIRefreshControl) {
-            // Reload the current page
-            if let webView = refreshControl.superview?.superview as? WKWebView {
-                webView.reload()
-                
-                // Stop refresh animation after delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    refreshControl.endRefreshing()
+            webView?.reload()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                refreshControl.endRefreshing()
+            }
+        }
+        
+        func loadBypassUrl() {
+            // Cancel previous task
+            loadTask?.cancel()
+            
+            loadTask = Task { @MainActor in
+                do {
+                    let bypassUrl = try await BypassLoginService.shared.generateTokenUrl(
+                        userData: parent.userData,
+                        destinationUrl: parent.destinationUrl
+                    )
+                    
+                    guard !Task.isCancelled else { return }
+                    
+                    let request = URLRequest(url: bypassUrl, cachePolicy: .reloadIgnoringLocalCacheData)
+                    webView?.load(request)
+                    
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    
+                    print("⚠️ Bypass error, using fallback: \(error)")
+                    let domain = parent.userData.domain ?? "vmart"
+                    if let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(parent.destinationUrl)") {
+                        let request = URLRequest(url: fallbackUrl, cachePolicy: .reloadIgnoringLocalCacheData)
+                        webView?.load(request)
+                    }
                 }
             }
         }
     }
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        // Handle updates if needed
-    }
-    
-    private func loadBypassUrl(webView: WKWebView) {
-        Task {
-            do {
-                let bypassUrl = try await BypassLoginService.shared.generateTokenUrl(
-                    userData: userData,
-                    destinationUrl: destinationUrl
-                )
-                
-                await MainActor.run {
-                    let request = URLRequest(url: bypassUrl)
-                    webView.load(request)
-                }            } catch {
-                print("Error generating bypass URL: \(error)")
-                await MainActor.run {
-                    // Fallback to original URL with dynamic domain
-                    let domain = userData.domain ?? "vmart"
-                    let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
-                    let request = URLRequest(url: fallbackUrl)
-                    webView.load(request)
-                }
-            }
+        // Only reload if URL changed
+        if let currentUrl = uiView.url?.absoluteString,
+           !currentUrl.contains(destinationUrl) {
+            context.coordinator.loadBypassUrl()
         }
     }
 }
 
-// MARK: - Loading WebView with Error Handling
+// MARK: - Lightweight Loading WebView
 struct LoadingBypassWebView: View {
     let userData: UserData
     let destinationUrl: String
-    @State private var bypassUrl: URL?
-    @State private var errorMessage: String?
-    @State private var retryCount = 0
+    @State private var isLoaded = false
     
-    private let maxRetries = 2
-      var body: some View {
-        Group {
-            if let error = errorMessage {
+    var body: some View {
+        ZStack {
+            // WebView loads immediately
+            BypassWebView(userData: userData, destinationUrl: destinationUrl)
+                .opacity(isLoaded ? 1 : 0)
+                .onAppear {
+                    // Quick fade in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeIn(duration: 0.2)) {
+                            isLoaded = true
+                        }
+                    }
+                }
+            
+            // Minimal loading indicator
+            if !isLoaded {
                 VStack {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 50))
-                        .foregroundColor(.orange)
-                    
-                    Text("Connection Issue")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    Text(retryCount >= maxRetries ? "Loading with standard authentication..." : error)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                    
-                    if retryCount < maxRetries {
-                        Button("Retry") {
-                            loadBypassUrl()
-                        }
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                    } else {
-                        // Final fallback after max retries
-                        Button("Continue with Standard Login") {
-                            let domain = userData.domain ?? "vmart"
-                            let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
-                            self.bypassUrl = fallbackUrl
-                            self.errorMessage = nil
-                        }
-                        .padding()
-                        .background(Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                    }
+                    ProgressView()
+                        .scaleEffect(0.8)
                 }
-                .padding()
-            } else if let url = bypassUrl {
-                WebView(url: url)
-            } else {
-                // Empty placeholder while waiting for URL (web handles loading)
-                Color.white
-            }
-        }
-        .onAppear {
-            print("LoadingBypassWebView appeared with URL: \(destinationUrl)")
-            loadBypassUrl()
-        }
-        .onChange(of: userData.id) { _ in
-            // Refresh WebView when userData changes (after login)
-            print("UserData changed, reloading...")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                loadBypassUrl()
-            }
-        }
-    }
-      private func loadBypassUrl() {
-        errorMessage = nil
-        bypassUrl = nil
-        
-        print("Loading bypass URL for: \(destinationUrl)")
-        
-        Task {
-            do {
-                let url = try await BypassLoginService.shared.generateTokenUrl(
-                    userData: userData,
-                    destinationUrl: destinationUrl
-                )
-                
-                await MainActor.run {
-                    self.bypassUrl = url
-                    print("✅ Successfully loaded bypass URL: \(url)")
-                }
-            } catch {
-                await MainActor.run {
-                    retryCount += 1
-                    let errorMsg = "Authentication setup failed (\(retryCount)/\(maxRetries))"
-                    self.errorMessage = errorMsg
-                    print("❌ Bypass login error (attempt \(retryCount)): \(error)")
-                    
-                    // Auto-retry for first few attempts
-                    if retryCount < maxRetries {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            if self.errorMessage == errorMsg { // Only retry if error hasn't changed
-                                loadBypassUrl()
-                            }
-                        }                    } else {
-                        // Final fallback
-                        print("⚠️ Max retries reached, using fallback URL")
-                        let domain = userData.domain ?? "vmart"
-                        let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(destinationUrl)")!
-                        self.bypassUrl = fallbackUrl
-                        self.errorMessage = nil
-                    }
-                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white)
             }
         }
     }
