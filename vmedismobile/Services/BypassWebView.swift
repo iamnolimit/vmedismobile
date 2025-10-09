@@ -5,15 +5,14 @@ import WebKit
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
     let destinationUrl: String
-    
-    func makeUIView(context: Context) -> WKWebView {
+      func makeUIView(context: Context) -> WKWebView {
         // Optimize WKWebView configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = .all
         
         // Lightweight preferences
-        let preferences = WKWebpreferences()
+        let preferences = WKPreferences()
         preferences.javaScriptCanOpenWindowsAutomatically = false
         config.preferences = preferences
         
