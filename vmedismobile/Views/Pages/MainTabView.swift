@@ -302,28 +302,31 @@ struct ProfileView: View {
                 .background(Color.gray.opacity(0.05))
                 .navigationTitle("Akun")
                 .navigationBarTitleDisplayMode(.inline)
-                
-                // Programmatic NavigationLink - in background
-                NavigationLink(
+                  // Programmatic NavigationLink - hidden but functional                NavigationLink(
                     destination: Group {
                         if let route = navigateToRoute {
                             ReportPageView(userData: userData, route: route)
                                 .onAppear {
                                     print("📄 ReportPageView appeared for route: \(route)")
                                 }
-                        } else {
-                            EmptyView()
+                                .onDisappear {
+                                    print("👋 ReportPageView disappeared for route: \(route)")
+                                }
                         }
                     },
                     isActive: Binding(
                         get: { 
-                            print("🔗 NavigationLink isActive getter: \(navigateToRoute != nil)")
-                            return navigateToRoute != nil 
+                            navigateToRoute != nil
                         },
                         set: { isActive in
-                            print("🔗 NavigationLink isActive setter: \(isActive)")
                             if !isActive {
-                                print("🔙 NavigationLink deactivated")
+                                // User tapped back - reset all navigation states
+                                print("🔙 User tapped back - resetting navigation states")
+                                DispatchQueue.main.async {
+                                    self.navigateToRoute = nil
+                                    self.shouldNavigate = false
+                                    self.navigationRoute = nil
+                                }
                             }
                         }
                     ),
@@ -332,7 +335,8 @@ struct ProfileView: View {
                 .frame(width: 0, height: 0)
                 .opacity(0)
             }
-        }.navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+        }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
         .onChange(of: submenuToExpand) { newSubmenu in
             if let submenu = newSubmenu {
@@ -354,28 +358,15 @@ struct ProfileView: View {
         }        .onChange(of: shouldNavigate) { newValue in
             if newValue, let route = navigationRoute {
                 print("🎯 ProfileView triggering navigation to: \(route)")
-                print("   Current navigateToRoute: \(String(describing: navigateToRoute))")
                 print("   Setting navigateToRoute to: \(route)")
                 
                 // Set state to trigger NavigationLink
                 navigateToRoute = route
                 
-                // Add small delay to ensure state is set
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    print("✅ navigateToRoute is now: \(String(describing: self.navigateToRoute))")
-                }
+                print("✅ navigateToRoute is now: \(String(describing: self.navigateToRoute))")
                 
-                // Reset navigation state after navigation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    print("🔄 Resetting navigation states")
-                    shouldNavigate = false
-                    navigationRoute = nil
-                    
-                    // Reset local state after navigation completes
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        navigateToRoute = nil
-                    }
-                }
+                // ✅ Don't auto-reset! Let NavigationLink's set closure handle it when user taps back
+                // This prevents the page from closing immediately
             }
         }
     }
@@ -516,18 +507,18 @@ struct ProfileOptionRow: View {
 struct ReportPageView: View {
     let userData: UserData
     let route: String
-    @State private var refreshId = UUID()
+    @State private var refreshTrigger = 0
     
     var body: some View {
         LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=\(route)")
-            .id(refreshId) // Force refresh with unique ID
+            .id("report-\(route)-\(refreshTrigger)") // Cache by route, allow manual refresh
             .navigationTitle(getTitle(for: route))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        // Force refresh WebView
-                        refreshId = UUID()
+                        // Manual refresh - increment trigger
+                        refreshTrigger += 1
                     }) {
                         Image(systemName: "arrow.clockwise")
                             .foregroundColor(.blue)
@@ -535,10 +526,6 @@ struct ReportPageView: View {
                 }
             }
             .preferredColorScheme(.light) // Force light mode
-            .onAppear {
-                // Force fresh load when page appears
-                refreshId = UUID()
-            }
     }
     
     func getTitle(for route: String) -> String {
