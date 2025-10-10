@@ -4,7 +4,9 @@ import WebKit
 
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
-    let destinationUrl: String    func makeUIView(context: Context) -> WKWebView {
+    let destinationUrl: String
+    
+    func makeUIView(context: Context) -> WKWebView {
         // Optimize WKWebView configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
