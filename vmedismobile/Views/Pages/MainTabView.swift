@@ -95,8 +95,15 @@ struct MenuItem: Identifiable {
 
 struct SubMenuItem: Identifiable {
     let id = UUID()
+    let icon: String
     let title: String
     let route: String
+    
+    init(icon: String = "doc.text", title: String, route: String) {
+        self.icon = icon
+        self.title = title
+        self.route = route
+    }
 }
 
 // MARK: - Profile View
@@ -104,39 +111,38 @@ struct ProfileView: View {
     let userData: UserData
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
-    
-    // Menu structure based on provided data
+      // Menu structure based on provided data
     let menuItems: [MenuItem] = [
         MenuItem(icon: "person.3", title: "Customer", route: "customers"),
         
         MenuItem(icon: "person.text.rectangle", title: "Pendaftaran Klinik", subMenus: [
-            SubMenuItem(title: "Laporan Registrasi Pasien", route: "lapregistrasipasien"),
-            SubMenuItem(title: "Laporan Kunjungan Pasien", route: "lapkunjunganpasien")
+            SubMenuItem(icon: "person.badge.plus", title: "Laporan Registrasi Pasien", route: "lapregistrasipasien"),
+            SubMenuItem(icon: "person.2", title: "Laporan Kunjungan Pasien", route: "lapkunjunganpasien")
         ]),
         
         MenuItem(icon: "stethoscope", title: "Pelayanan Klinik", subMenus: [
-            SubMenuItem(title: "Laporan Janji Dengan Dokter", route: "lapjanjidengandokter")
+            SubMenuItem(icon: "calendar.badge.clock", title: "Laporan Janji Dengan Dokter", route: "lapjanjidengandokter")
         ]),
         
         MenuItem(icon: "creditcard", title: "Billing Kasir", subMenus: [
-            SubMenuItem(title: "Laporan Piutang Klinik", route: "lappiutangklinik"),
-            SubMenuItem(title: "Laporan Pembayaran Kasir", route: "lappembayarankasir"),
-            SubMenuItem(title: "Laporan Penjualan Obat Klinik", route: "lappenjualanobatklinik"),
-            SubMenuItem(title: "Laporan Tagihan Jaminan", route: "laptagihanjaminan"),
-            SubMenuItem(title: "Laporan Pendapatan Petugas Medis", route: "lappendapatanpetugasmedis")
+            SubMenuItem(icon: "dollarsign.circle", title: "Laporan Piutang Klinik", route: "lappiutangklinik"),
+            SubMenuItem(icon: "banknote", title: "Laporan Pembayaran Kasir", route: "lappembayarankasir"),
+            SubMenuItem(icon: "cart", title: "Laporan Penjualan Obat Klinik", route: "lappenjualanobatklinik"),
+            SubMenuItem(icon: "doc.text.magnifyingglass", title: "Laporan Tagihan Jaminan", route: "laptagihanjaminan"),
+            SubMenuItem(icon: "stethoscope", title: "Laporan Pendapatan Petugas Medis", route: "lappendapatanpetugasmedis")
         ]),
         
         MenuItem(icon: "pills", title: "Laporan Apotek", subMenus: [
-            SubMenuItem(title: "Laporan Pembelian", route: "lappembelianobat"),
-            SubMenuItem(title: "Laporan Hutang Obat", route: "laphutangobat"),
-            SubMenuItem(title: "Laporan Penjualan Obat", route: "lappenjualanobat"),
-            SubMenuItem(title: "Laporan Piutang Obat", route: "lappiutangobat"),
-            SubMenuItem(title: "Laporan Obat Stok Habis", route: "lapobatstokhabis"),
-            SubMenuItem(title: "Laporan Obat Expired", route: "lapobatexpired"),
-            SubMenuItem(title: "Laporan Obat Terlaris", route: "lapobatterlaris"),
-            SubMenuItem(title: "Laporan Stok Opname", route: "lapstokopname"),
-            SubMenuItem(title: "Laporan Stok Obat", route: "lapstokobat"),
-            SubMenuItem(title: "Laporan Pergantian Shift", route: "lappergantianshift")
+            SubMenuItem(icon: "cart.fill", title: "Laporan Pembelian", route: "lappembelianobat"),
+            SubMenuItem(icon: "creditcard.circle", title: "Laporan Hutang Obat", route: "laphutangobat"),
+            SubMenuItem(icon: "bag", title: "Laporan Penjualan Obat", route: "lappenjualanobat"),
+            SubMenuItem(icon: "dollarsign.arrow.circlepath", title: "Laporan Piutang Obat", route: "lappiutangobat"),
+            SubMenuItem(icon: "exclamationmark.triangle", title: "Laporan Obat Stok Habis", route: "lapobatstokhabis"),
+            SubMenuItem(icon: "calendar.badge.exclamationmark", title: "Laporan Obat Expired", route: "lapobatexpired"),
+            SubMenuItem(icon: "star.fill", title: "Laporan Obat Terlaris", route: "lapobatterlaris"),
+            SubMenuItem(icon: "shippingbox", title: "Laporan Stok Opname", route: "lapstokopname"),
+            SubMenuItem(icon: "square.stack.3d.up", title: "Laporan Stok Obat", route: "lapstokobat"),
+            SubMenuItem(icon: "arrow.left.arrow.right", title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
     ];
     
@@ -226,7 +232,7 @@ struct ProfileView: View {
                 .padding()
             }
             .background(Color.gray.opacity(0.05))
-            .navigationTitle("Profile")
+            .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
         }
         .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
@@ -256,8 +262,7 @@ struct AccordionMenuRow: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            
-            // Sub Menus (Collapsible)
+              // Sub Menus (Collapsible)
             if let subMenus = menu.subMenus, isExpanded {
                 VStack(spacing: 0) {
                     ForEach(subMenus) { subMenu in
@@ -265,11 +270,13 @@ struct AccordionMenuRow: View {
                             HStack {
                                 // Indentation for sub menu
                                 Spacer()
-                                    .frame(width: 30)
+                                    .frame(width: 20)
                                 
-                                Circle()
-                                    .fill(Color.blue.opacity(0.3))
-                                    .frame(width: 6, height: 6)
+                                // Icon untuk sub menu (bukan dots)
+                                Image(systemName: subMenu.icon)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.blue)
+                                    .frame(width: 24)
                                 
                                 Text(subMenu.title)
                                     .font(.subheadline)
@@ -291,7 +298,7 @@ struct AccordionMenuRow: View {
                         
                         if subMenu.id != subMenus.last?.id {
                             Divider()
-                                .padding(.leading, 46)
+                                .padding(.leading, 60)
                         }
                     }
                 }
