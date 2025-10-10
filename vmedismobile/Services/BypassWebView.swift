@@ -54,7 +54,8 @@ struct BypassWebView: UIViewRepresentable {
     
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
-    }    class Coordinator: NSObject, WKScriptMessageHandler {
+    }    
+    class Coordinator: NSObject, WKScriptMessageHandler {
         var parent: BypassWebView
         weak var webView: WKWebView?
         weak var refreshControl: UIRefreshControl?
