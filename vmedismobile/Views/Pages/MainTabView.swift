@@ -4,6 +4,8 @@ import SwiftUI
 struct MainTabView: View {
     let userData: UserData
     @State private var selectedTab = 0
+    @State private var navigationRoute: String?
+    @State private var shouldNavigateToReport = false
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -38,19 +40,23 @@ struct MainTabView: View {
                     Text("Forecast")
                 }
                 .tag(3)
-            
-            // 5. Account Tab - Using native ProfileView with Customer menu
-            ProfileView(userData: userData)
-                .tabItem {
-                    Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
-                    Text("Akun")
-                }
-                .tag(4)
+              // 5. Account Tab - Using native ProfileView with Customer menu
+            ProfileView(
+                userData: userData,
+                navigationRoute: $navigationRoute,
+                shouldNavigate: $shouldNavigateToReport
+            )
+            .tabItem {
+                Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
+                Text("Akun")
+            }
+            .tag(4)
         }
         .accentColor(.blue)
         .preferredColorScheme(.light)
         .onAppear {
             setupTabBarAppearance()
+            setupStatsNavigationListener()
         }
     }
       private func setupTabBarAppearance() {
@@ -69,10 +75,36 @@ struct MainTabView: View {
         tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
             .foregroundColor: UIColor.systemGray
         ]
-        
-        // iOS 16+ uses only scrollEdgeAppearance
+          // iOS 16+ uses only scrollEdgeAppearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+    }
+    
+    private func setupStatsNavigationListener() {
+        // Listen untuk notification dari stats navigation
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("NavigateToReport"),
+            object: nil,
+            queue: .main
+        ) { notification in
+            guard let userInfo = notification.userInfo,
+                  let route = userInfo["route"] as? String else {
+                return
+            }
+            
+            print("📱 MainTabView received navigation request: \(route)")
+            
+            // Switch ke tab Akun (index 4)
+            self.selectedTab = 4
+            
+            // Set navigation state
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.navigationRoute = route
+                self.shouldNavigateToReport = true
+                
+                print("✅ Navigation state set: \(route)")
+            }
+        }
     }
 }
 
@@ -109,8 +141,11 @@ struct SubMenuItem: Identifiable {
 // MARK: - Profile View
 struct ProfileView: View {
     let userData: UserData
+    @Binding var navigationRoute: String?
+    @Binding var shouldNavigate: Bool
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
+    @State private var navigateToRoute: String?
       // Menu structure based on provided data
     let menuItems: [MenuItem] = [
         MenuItem(icon: "person.3", title: "Customer", route: "customers"),
@@ -228,15 +263,42 @@ struct ProfileView: View {
                     .background(Color.white)
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                }
-                .padding()
+                }                .padding()
             }
             .background(Color.gray.opacity(0.05))
             .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
+            
+            // Programmatic NavigationLink for stats navigation
+            NavigationLink(
+                destination: navigateToRoute.map { route in
+                    ReportPageView(userData: userData, route: route)
+                },
+                isActive: .constant(navigateToRoute != nil),
+                label: { EmptyView() }
+            )
         }
         .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
+        .onChange(of: shouldNavigate) { newValue in
+            if newValue, let route = navigationRoute {
+                print("🎯 ProfileView triggering navigation to: \(route)")
+                
+                // Set state to trigger NavigationLink
+                navigateToRoute = route
+                
+                // Reset navigation state after navigation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    shouldNavigate = false
+                    navigationRoute = nil
+                    
+                    // Reset local state after navigation completes
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        navigateToRoute = nil
+                    }
+                }
+            }
+        }
     }
 }
 

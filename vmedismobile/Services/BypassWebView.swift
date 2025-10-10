@@ -4,8 +4,7 @@ import WebKit
 
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
-    let destinationUrl: String
-      func makeUIView(context: Context) -> WKWebView {
+    let destinationUrl: String    func makeUIView(context: Context) -> WKWebView {
         // Optimize WKWebView configuration for iOS 16+
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
@@ -20,6 +19,9 @@ struct BypassWebView: UIViewRepresentable {
         if #available(iOS 16.0, *) {
             config.preferences.isElementFullscreenEnabled = false
         }
+        
+        // Add message handler for stats navigation
+        config.userContentController.add(context.coordinator, name: "navigateToReport")
         
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.scrollView.bounces = true
@@ -51,8 +53,7 @@ struct BypassWebView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
     }
-    
-    class Coordinator: NSObject {
+      class Coordinator: NSObject, WKScriptMessageHandler {
         var parent: BypassWebView
         weak var webView: WKWebView?
         weak var refreshControl: UIRefreshControl?
@@ -66,6 +67,17 @@ struct BypassWebView: UIViewRepresentable {
             // Cancel any ongoing tasks
             loadTask?.cancel()
             webView?.configuration.userContentController.removeAllUserScripts()
+            webView?.configuration.userContentController.removeScriptMessageHandler(forName: "navigateToReport")
+        }
+        
+        // MARK: - WKScriptMessageHandler
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "navigateToReport" {
+                if let data = message.body as? [String: Any] {
+                    print("📨 Received stats navigation message: \(data)")
+                    StatsDeepLinkHandler.shared.handleStatsNavigation(message: data)
+                }
+            }
         }
         
         @objc func handleRefresh(_ refreshControl: UIRefreshControl) {
