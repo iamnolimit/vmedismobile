@@ -304,17 +304,20 @@ struct ProfileView: View {
                 
                 // Programmatic NavigationLink - hidden but functional
                 NavigationLink(
-                    destination: {
+                    destination: ReportPageView(
+                        userData: userData, 
+                        route: navigateToRoute ?? ""
+                    )
+                    .onAppear {
                         if let route = navigateToRoute {
-                            ReportPageView(userData: userData, route: route)
-                                .onAppear {
-                                    print("📄 ReportPageView appeared for route: \(route)")
-                                }
-                                .onDisappear {
-                                    print("👋 ReportPageView disappeared for route: \(route)")
-                                }
+                            print("📄 ReportPageView appeared for route: \(route)")
                         }
-                    }(),
+                    }
+                    .onDisappear {
+                        if let route = navigateToRoute {
+                            print("👋 ReportPageView disappeared for route: \(route)")
+                        }
+                    },
                     isActive: Binding(
                         get: { 
                             navigateToRoute != nil
