@@ -81,11 +81,12 @@ struct MainTabView: View {
         tabBarAppearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
         tabBarAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [
             .foregroundColor: UIColor.systemGray
-        ]
-          // iOS 16+ uses only scrollEdgeAppearance
+        ]        // iOS 16+ uses only scrollEdgeAppearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-    }    private func setupStatsNavigationListener() {
+    }
+    
+    private func setupStatsNavigationListener() {
         // Listen untuk notification dari stats navigation
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("NavigateToReport"),
