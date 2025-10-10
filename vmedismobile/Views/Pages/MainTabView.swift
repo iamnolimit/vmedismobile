@@ -298,12 +298,13 @@ struct ProfileView: View {
                         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                     .padding()
-                }
-                .background(Color.gray.opacity(0.05))
+                }                .background(Color.gray.opacity(0.05))
                 .navigationTitle("Akun")
                 .navigationBarTitleDisplayMode(.inline)
-                  // Programmatic NavigationLink - hidden but functional                NavigationLink(
-                    destination: Group {
+                
+                // Programmatic NavigationLink - hidden but functional
+                NavigationLink(
+                    destination: {
                         if let route = navigateToRoute {
                             ReportPageView(userData: userData, route: route)
                                 .onAppear {
@@ -313,7 +314,7 @@ struct ProfileView: View {
                                     print("👋 ReportPageView disappeared for route: \(route)")
                                 }
                         }
-                    },
+                    }(),
                     isActive: Binding(
                         get: { 
                             navigateToRoute != nil
