@@ -62,8 +62,7 @@ class StatsDeepLinkHandler: ObservableObject {
     @Published var shouldNavigate: Bool = false
     
     private init() {}
-    
-    /**
+      /**
      * Process deep link from React stats card
      * Converts React route to Swift native route and triggers navigation
      */
@@ -75,11 +74,13 @@ class StatsDeepLinkHandler: ObservableObject {
         }
         
         let filterParams = message["filterParams"] as? [String: String]
+        let submenuTitle = message["submenu"] as? String
         
         print("📊 Processing stats navigation:")
         print("   Stats ID: \(statsId)")
         print("   React Route: \(reactRoute)")
         print("   Filters: \(String(describing: filterParams))")
+        print("   Submenu: \(String(describing: submenuTitle))")
         
         // Convert React route to Swift route
         guard let swiftRoute = StatsRouteMapper.getSwiftRoute(from: reactRoute) else {
@@ -102,11 +103,15 @@ class StatsDeepLinkHandler: ObservableObject {
                 userInfo: [
                     "route": swiftRoute,
                     "statsId": statsId,
+                    "submenu": submenuTitle ?? "",
                     "filters": filterParams ?? [:]
                 ]
             )
             
             print("🚀 Navigation triggered to: \(swiftRoute)")
+            if let submenu = submenuTitle {
+                print("📂 Will expand submenu: \(submenu)")
+            }
         }
     }
     

@@ -6,19 +6,21 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var navigationRoute: String?
     @State private var shouldNavigateToReport = false
+    @State private var submenuToExpand: String?
     
     var body: some View {
         TabView(selection: $selectedTab) {
             // 1. Home Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
+                .id("home-tab") // Preserve WebView state
                 .tabItem {
                     Image(systemName: selectedTab == 0 ? "house.fill" : "house")
                     Text("Home")
                 }
                 .tag(0)
-            
-            // 2. Obat Tab
+              // 2. Obat Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=products")
+                .id("obat-tab") // Preserve WebView state
                 .tabItem {
                     Image(systemName: selectedTab == 1 ? "pills.fill" : "pills")
                     Text("Obat")
@@ -27,6 +29,7 @@ struct MainTabView: View {
             
             // 3. Keuangan Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
+                .id("keuangan-tab") // Preserve WebView state
                 .tabItem {
                     Image(systemName: selectedTab == 2 ? "banknote.fill" : "banknote")
                     Text("Keuangan")
@@ -35,16 +38,17 @@ struct MainTabView: View {
             
             // 4. Forecast Tab
             LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
+                .id("forecast-tab") // Preserve WebView state
                 .tabItem {
                     Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                     Text("Forecast")
                 }
-                .tag(3)
-              // 5. Account Tab - Using native ProfileView with Customer menu
+                .tag(3)// 5. Account Tab - Using native ProfileView with Customer menu
             ProfileView(
                 userData: userData,
                 navigationRoute: $navigationRoute,
-                shouldNavigate: $shouldNavigateToReport
+                shouldNavigate: $shouldNavigateToReport,
+                submenuToExpand: $submenuToExpand
             )
             .tabItem {
                 Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
@@ -79,8 +83,7 @@ struct MainTabView: View {
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
     }
-    
-    private func setupStatsNavigationListener() {
+      private func setupStatsNavigationListener() {
         // Listen untuk notification dari stats navigation
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("NavigateToReport"),
@@ -94,11 +97,22 @@ struct MainTabView: View {
             
             print("📱 MainTabView received navigation request: \(route)")
             
+            // Get submenu info if available
+            let submenu = userInfo["submenu"] as? String
+            if let submenu = submenu, !submenu.isEmpty {
+                print("📂 Should expand submenu: \(submenu)")
+            }
+            
             // Switch ke tab Akun (index 4)
             self.selectedTab = 4
             
             // Set navigation state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                // Expand submenu jika ada
+                if let submenu = submenu, !submenu.isEmpty {
+                    self.submenuToExpand = submenu
+                }
+                
                 self.navigationRoute = route
                 self.shouldNavigateToReport = true
                 
@@ -143,6 +157,7 @@ struct ProfileView: View {
     let userData: UserData
     @Binding var navigationRoute: String?
     @Binding var shouldNavigate: Bool
+    @Binding var submenuToExpand: String?
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
     @State private var navigateToRoute: String?
@@ -277,9 +292,26 @@ struct ProfileView: View {
                 isActive: .constant(navigateToRoute != nil),
                 label: { EmptyView() }
             )
-        }
-        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+        }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
+        .onChange(of: submenuToExpand) { newSubmenu in
+            if let submenu = newSubmenu {
+                print("📂 Expanding submenu: \(submenu)")
+                
+                // Find menu dengan title yang match
+                if let menuToExpand = menuItems.first(where: { $0.title == submenu }) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        expandedMenuIds.insert(menuToExpand.id)
+                    }
+                    print("✅ Submenu expanded: \(submenu)")
+                }
+                
+                // Reset submenu state
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    submenuToExpand = nil
+                }
+            }
+        }
         .onChange(of: shouldNavigate) { newValue in
             if newValue, let route = navigationRoute {
                 print("🎯 ProfileView triggering navigation to: \(route)")

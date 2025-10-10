@@ -54,12 +54,12 @@ struct BypassWebView: UIViewRepresentable {
     
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
-    }
-      class Coordinator: NSObject, WKScriptMessageHandler {
+    }    class Coordinator: NSObject, WKScriptMessageHandler {
         var parent: BypassWebView
         weak var webView: WKWebView?
         weak var refreshControl: UIRefreshControl?
         var loadTask: Task<Void, Never>?
+        var hasCompletedInitialLoad = false
         
         init(parent: BypassWebView) {
             self.parent = parent
@@ -88,8 +88,7 @@ struct BypassWebView: UIViewRepresentable {
                 refreshControl.endRefreshing()
             }
         }
-        
-        func loadBypassUrl() {
+          func loadBypassUrl() {
             // Cancel previous task
             loadTask?.cancel()
             
@@ -108,10 +107,12 @@ struct BypassWebView: UIViewRepresentable {
                     
                     webView?.load(request)
                     
+                    // Mark initial load as complete
+                    hasCompletedInitialLoad = true
+                    
                 } catch {
                     guard !Task.isCancelled else { return }
-                    
-                    print("⚠️ Bypass error, using fallback: \(error)")
+                      print("⚠️ Bypass error, using fallback: \(error)")
                     let domain = parent.userData.domain ?? "vmart"
                     if let fallbackUrl = URL(string: "https://v3.vmedis.com/\(domain)/\(parent.destinationUrl)") {
                         var request = URLRequest(url: fallbackUrl)
@@ -119,16 +120,26 @@ struct BypassWebView: UIViewRepresentable {
                         request.timeoutInterval = 30
                         
                         webView?.load(request)
+                        
+                        // Mark initial load as complete even for fallback
+                        hasCompletedInitialLoad = true
                     }
                 }
             }
         }
     }
-    
-    func updateUIView(_ uiView: WKWebView, context: Context) {
-        // Only reload if URL changed
-        if let currentUrl = uiView.url?.absoluteString,
-           !currentUrl.contains(destinationUrl) {
+      func updateUIView(_ uiView: WKWebView, context: Context) {
+        // Prevent reload on tab switch or view updates
+        // Only reload if destinationUrl actually changed AND we've loaded before
+        guard let currentUrl = uiView.url?.absoluteString else {
+            return
+        }
+        
+        // Check if we need to reload based on actual URL change
+        let needsReload = !currentUrl.contains(destinationUrl)
+        
+        if needsReload && context.coordinator.hasCompletedInitialLoad {
+            print("🔄 BypassWebView: Reloading due to URL change")
             context.coordinator.loadBypassUrl()
         }
     }
