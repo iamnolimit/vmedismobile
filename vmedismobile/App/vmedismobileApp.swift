@@ -1,4 +1,4 @@
-// File: vmedismobileApp.swift
+// File: vmedismobileApp.swift - Lightweight for iOS 15.6+
 import SwiftUI
 
 @main

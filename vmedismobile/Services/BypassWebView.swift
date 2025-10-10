@@ -120,35 +120,13 @@ struct BypassWebView: UIViewRepresentable {
     }
 }
 
-// MARK: - Lightweight Loading WebView
+// MARK: - Direct Bypass WebView (No Loading UI)
 struct LoadingBypassWebView: View {
     let userData: UserData
     let destinationUrl: String
-    @State private var isLoaded = false
     
     var body: some View {
-        ZStack {
-            // WebView loads immediately
-            BypassWebView(userData: userData, destinationUrl: destinationUrl)
-                .opacity(isLoaded ? 1 : 0)
-                .onAppear {
-                    // Quick fade in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        withAnimation(.easeIn(duration: 0.2)) {
-                            isLoaded = true
-                        }
-                    }
-                }
-            
-            // Minimal loading indicator
-            if !isLoaded {
-                VStack {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
-            }
-        }
+        // Direct load - no loading overlay
+        BypassWebView(userData: userData, destinationUrl: destinationUrl)
     }
 }
