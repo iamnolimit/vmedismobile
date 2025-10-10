@@ -195,118 +195,144 @@ struct ProfileView: View {
             SubMenuItem(icon: "arrow.left.arrow.right", title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
     ];
-    
-    var body: some View {
+      var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Profile Header
-                    VStack(spacing: 16) {
-                        // Profile Image
-                        AsyncImage(url: URL(string: "https://via.placeholder.com/100")) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.gray)
-                                )
-                        }
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                        
-                        VStack(spacing: 4) {
-                            Text(userData.nama_lengkap ?? "User")
-                                .font(.title2)
-                                .fontWeight(.bold)
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Profile Header
+                        VStack(spacing: 16) {
+                            // Profile Image
+                            AsyncImage(url: URL(string: "https://via.placeholder.com/100")) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(.gray)
+                                    )
+                            }
+                            .frame(width: 100, height: 100)
+                            .clipShape(Circle())
                             
-                            Text(userData.username ?? "")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            
-                            if let klinikName = userData.kl_nama {
-                                Text(klinikName)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 4)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(6)
+                            VStack(spacing: 4) {
+                                Text(userData.nama_lengkap ?? "User")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                
+                                Text(userData.username ?? "")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                
+                                if let klinikName = userData.kl_nama {
+                                    Text(klinikName)
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 4)
+                                        .background(Color.blue.opacity(0.1))
+                                        .cornerRadius(6)
+                                }
                             }
                         }
-                    }
-                    .padding()
-                    
-                    // Menu Options with Accordion
-                    VStack(spacing: 0) {
-                        ForEach(menuItems) { menu in
-                            AccordionMenuRow(
-                                menu: menu,
-                                isExpanded: expandedMenuIds.contains(menu.id),
-                                userData: userData,
-                                onToggle: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        if expandedMenuIds.contains(menu.id) {
-                                            expandedMenuIds.remove(menu.id)
-                                        } else {
-                                            expandedMenuIds.insert(menu.id)
+                        .padding()
+                        
+                        // Menu Options with Accordion
+                        VStack(spacing: 0) {
+                            ForEach(menuItems) { menu in
+                                AccordionMenuRow(
+                                    menu: menu,
+                                    isExpanded: expandedMenuIds.contains(menu.id),
+                                    userData: userData,
+                                    onToggle: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            if expandedMenuIds.contains(menu.id) {
+                                                expandedMenuIds.remove(menu.id)
+                                            } else {
+                                                expandedMenuIds.insert(menu.id)
+                                            }
                                         }
                                     }
+                                )
+                                
+                                if menu.id != menuItems.last?.id {
+                                    Divider()
+                                }
+                            }
+                            
+                            Divider()
+                              // Logout Option
+                            ProfileOptionRow(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                title: "Logout",
+                                action: {
+                                    appState.logout()
                                 }
                             )
                             
-                            if menu.id != menuItems.last?.id {
-                                Divider()
+                            // DEBUG: Test navigation button
+                            #if DEBUG
+                            Divider()
+                            Button(action: {
+                                print("🧪 TEST: Manual trigger navigation")
+                                navigateToRoute = "lappenjualanobat"
+                                print("🧪 TEST: navigateToRoute set to: \(String(describing: navigateToRoute))")
+                            }) {
+                                HStack {
+                                    Image(systemName: "hammer.fill")
+                                        .foregroundColor(.orange)
+                                    Text("DEBUG: Test Navigation")
+                                        .foregroundColor(.orange)
+                                    Spacer()
+                                }
+                                .padding()
+                            }
+                            #endif
+                        }
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                    }
+                    .padding()
+                }
+                .background(Color.gray.opacity(0.05))
+                .navigationTitle("Akun")
+                .navigationBarTitleDisplayMode(.inline)
+                
+                // Programmatic NavigationLink - in background
+                NavigationLink(
+                    destination: Group {
+                        if let route = navigateToRoute {
+                            ReportPageView(userData: userData, route: route)
+                                .onAppear {
+                                    print("📄 ReportPageView appeared for route: \(route)")
+                                }
+                        } else {
+                            EmptyView()
+                        }
+                    },
+                    isActive: Binding(
+                        get: { 
+                            print("🔗 NavigationLink isActive getter: \(navigateToRoute != nil)")
+                            return navigateToRoute != nil 
+                        },
+                        set: { isActive in
+                            print("🔗 NavigationLink isActive setter: \(isActive)")
+                            if !isActive {
+                                print("🔙 NavigationLink deactivated")
                             }
                         }
-                        
-                        Divider()
-                        
-                        // Logout Option
-                        ProfileOptionRow(
-                            icon: "rectangle.portrait.and.arrow.right",
-                            title: "Logout",
-                            action: {
-                                appState.logout()
-                            }
-                        )
-                    }
-                    .background(Color.white)
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                }                .padding()
+                    ),
+                    label: { EmptyView() }
+                )
+                .frame(width: 0, height: 0)
+                .opacity(0)
             }
-            .background(Color.gray.opacity(0.05))
-            .navigationTitle("Akun")
-            .navigationBarTitleDisplayMode(.inline)
-              // Programmatic NavigationLink for stats navigation
-            NavigationLink(
-                destination: Group {
-                    if let route = navigateToRoute {
-                        ReportPageView(userData: userData, route: route)
-                            .onAppear {
-                                print("📄 ReportPageView appeared for route: \(route)")
-                            }
-                    } else {
-                        EmptyView()
-                    }
-                },
-                isActive: Binding(
-                    get: { navigateToRoute != nil },
-                    set: { isActive in
-                        if !isActive {
-                            print("🔙 NavigationLink deactivated")
-                        }
-                    }
-                ),
-                label: { EmptyView() }
-            )
-            .hidden() // Hide the link but keep it functional
-        }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+        }.navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
         .onChange(of: submenuToExpand) { newSubmenu in
             if let submenu = newSubmenu {
