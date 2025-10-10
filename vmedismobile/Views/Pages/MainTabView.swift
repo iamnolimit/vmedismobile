@@ -283,15 +283,29 @@ struct ProfileView: View {
             .background(Color.gray.opacity(0.05))
             .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
-            
-            // Programmatic NavigationLink for stats navigation
+              // Programmatic NavigationLink for stats navigation
             NavigationLink(
-                destination: navigateToRoute.map { route in
-                    ReportPageView(userData: userData, route: route)
+                destination: Group {
+                    if let route = navigateToRoute {
+                        ReportPageView(userData: userData, route: route)
+                            .onAppear {
+                                print("📄 ReportPageView appeared for route: \(route)")
+                            }
+                    } else {
+                        EmptyView()
+                    }
                 },
-                isActive: .constant(navigateToRoute != nil),
+                isActive: Binding(
+                    get: { navigateToRoute != nil },
+                    set: { isActive in
+                        if !isActive {
+                            print("🔙 NavigationLink deactivated")
+                        }
+                    }
+                ),
                 label: { EmptyView() }
             )
+            .hidden() // Hide the link but keep it functional
         }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
         .onChange(of: submenuToExpand) { newSubmenu in
@@ -311,16 +325,23 @@ struct ProfileView: View {
                     submenuToExpand = nil
                 }
             }
-        }
-        .onChange(of: shouldNavigate) { newValue in
+        }        .onChange(of: shouldNavigate) { newValue in
             if newValue, let route = navigationRoute {
                 print("🎯 ProfileView triggering navigation to: \(route)")
+                print("   Current navigateToRoute: \(String(describing: navigateToRoute))")
+                print("   Setting navigateToRoute to: \(route)")
                 
                 // Set state to trigger NavigationLink
                 navigateToRoute = route
                 
+                // Add small delay to ensure state is set
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    print("✅ navigateToRoute is now: \(String(describing: self.navigateToRoute))")
+                }
+                
                 // Reset navigation state after navigation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    print("🔄 Resetting navigation states")
                     shouldNavigate = false
                     navigationRoute = nil
                     
