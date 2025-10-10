@@ -4,6 +4,7 @@ import SwiftUI
 struct MainTabView: View {
     let userData: UserData
     @State private var selectedTab = 0
+    @State private var previousTab: Int? = nil // Track previous tab for back navigation
     @State private var navigationRoute: String?
     @State private var shouldNavigateToReport = false
     @State private var submenuToExpand: String?
@@ -43,12 +44,14 @@ struct MainTabView: View {
                     Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                     Text("Forecast")
                 }
-                .tag(3)// 5. Account Tab - Using native ProfileView with Customer menu
+                .tag(3)            // 5. Account Tab - Using native ProfileView with Customer menu
             ProfileView(
                 userData: userData,
                 navigationRoute: $navigationRoute,
                 shouldNavigate: $shouldNavigateToReport,
-                submenuToExpand: $submenuToExpand
+                submenuToExpand: $submenuToExpand,
+                previousTab: $previousTab,
+                selectedTab: $selectedTab
             )
             .tabItem {
                 Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
@@ -82,8 +85,7 @@ struct MainTabView: View {
           // iOS 16+ uses only scrollEdgeAppearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-    }
-      private func setupStatsNavigationListener() {
+    }    private func setupStatsNavigationListener() {
         // Listen untuk notification dari stats navigation
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("NavigateToReport"),
@@ -101,6 +103,12 @@ struct MainTabView: View {
             let submenu = userInfo["submenu"] as? String
             if let submenu = submenu, !submenu.isEmpty {
                 print("📂 Should expand submenu: \(submenu)")
+            }
+            
+            // Save current tab before switching (for back navigation)
+            if self.selectedTab != 4 {
+                self.previousTab = self.selectedTab
+                print("💾 Saved previous tab: \(self.selectedTab)")
             }
             
             // Switch ke tab Akun (index 4)
@@ -158,6 +166,8 @@ struct ProfileView: View {
     @Binding var navigationRoute: String?
     @Binding var shouldNavigate: Bool
     @Binding var submenuToExpand: String?
+    @Binding var previousTab: Int?
+    @Binding var selectedTab: Int
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
     @State private var navigateToRoute: String?
@@ -317,19 +327,25 @@ struct ProfileView: View {
                         if let route = navigateToRoute {
                             print("👋 ReportPageView disappeared for route: \(route)")
                         }
-                    },
-                    isActive: Binding(
+                    },                    isActive: Binding(
                         get: { 
                             navigateToRoute != nil
                         },
                         set: { isActive in
                             if !isActive {
-                                // User tapped back - reset all navigation states
+                                // User tapped back - reset navigation states and restore previous tab
                                 print("🔙 User tapped back - resetting navigation states")
                                 DispatchQueue.main.async {
                                     self.navigateToRoute = nil
                                     self.shouldNavigate = false
                                     self.navigationRoute = nil
+                                    
+                                    // Restore previous tab if coming from stats navigation
+                                    if let prevTab = self.previousTab {
+                                        print("↩️ Restoring previous tab: \(prevTab)")
+                                        self.selectedTab = prevTab
+                                        self.previousTab = nil // Clear after restore
+                                    }
                                 }
                             }
                         }
