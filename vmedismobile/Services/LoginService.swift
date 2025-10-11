@@ -137,13 +137,17 @@ class LoginService: ObservableObject {
             } catch let decodingError as DecodingError {
                 print("Decoding Error: \(decodingError)")
                 // If decoding fails, likely domain not found (different response structure)
-                throw LoginError.domainNotFound
-            } catch {
+                throw LoginError.domainNotFound            } catch {
                 print("Other Error: \(error)")
                 throw error
             }
             
+        } catch let error as LoginError {
+            // Jika sudah LoginError (misal domainNotFound), langsung throw tanpa wrap
+            print("LoginError caught: \(error)")
+            throw error
         } catch {
+            // Jika error lain (network, dll), wrap sebagai networkError
             print("Network Error: \(error)")
             throw LoginError.networkError(error)
         }
