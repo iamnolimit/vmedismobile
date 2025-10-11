@@ -36,7 +36,8 @@ struct UserData: Codable {
 
 struct DomainValidationResponse: Codable {
     let status: String
-    let data: DomainData?
+    let message: String?    // Tambahkan untuk handle error message
+    let data: DomainData?   // Optional karena bisa null saat error
 }
 
 struct DomainData: Codable {
@@ -102,20 +103,44 @@ class LoginService: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 print("HTTP Status Code: \(httpResponse.statusCode)")
             }
-            
-            // Debug: Print raw response
+              // Debug: Print raw response
             if let responseString = String(data: data, encoding: .utf8) {
                 print("Raw Response: \(responseString)")
+            }
+            
+            // Try to decode as generic JSON first to check structure
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                print("JSON Structure: \(jsonObject)")
+                
+                // Check if status is "failed" or "error"
+                if let status = jsonObject["status"] as? String {
+                    print("Response Status: \(status)")
+                    
+                    if status == "failed" || status == "error" {
+                        print("Domain validation failed - domain not found")
+                        throw LoginError.domainNotFound
+                    }
+                }
             }
             
             // Decode response
             do {
                 let domainResponse = try JSONDecoder().decode(DomainValidationResponse.self, from: data)
                 print("Domain Validation Status: \(domainResponse.status)")
+                
+                // Double check status after decoding
+                if domainResponse.status == "failed" || domainResponse.status == "error" {
+                    throw LoginError.domainNotFound
+                }
+                
                 return domainResponse
+            } catch let decodingError as DecodingError {
+                print("Decoding Error: \(decodingError)")
+                // If decoding fails, likely domain not found (different response structure)
+                throw LoginError.domainNotFound
             } catch {
-                print("Decoding Error: \(error)")
-                throw LoginError.decodingError("Failed to decode domain validation response")
+                print("Other Error: \(error)")
+                throw error
             }
             
         } catch {

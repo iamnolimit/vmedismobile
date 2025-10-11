@@ -303,24 +303,6 @@ struct ProfileView: View {
                                 }
                             )
                             
-                            // DEBUG: Test navigation button
-                            #if DEBUG
-                            Divider()
-                            Button(action: {
-                                print("🧪 TEST: Manual trigger navigation")
-                                navigateToRoute = "lappenjualanobat"
-                                print("🧪 TEST: navigateToRoute set to: \(String(describing: navigateToRoute))")
-                            }) {
-                                HStack {
-                                    Image(systemName: "hammer.fill")
-                                        .foregroundColor(.orange)
-                                    Text("DEBUG: Test Navigation")
-                                        .foregroundColor(.orange)
-                                    Spacer()
-                                }
-                                .padding()
-                            }
-                            #endif
                         }
                         .background(Color.white)
                         .cornerRadius(12)
