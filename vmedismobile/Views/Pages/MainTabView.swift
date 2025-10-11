@@ -210,22 +210,40 @@ struct ProfileView: View {
         NavigationView {
             ZStack {
                 ScrollView {
-                    VStack(spacing: 20) {
-                        // Profile Header
+                    VStack(spacing: 20) {                        // Profile Header
                         VStack(spacing: 16) {
-                            // Profile Image
-                            AsyncImage(url: URL(string: "https://via.placeholder.com/100")) { image in
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .font(.system(size: 40))
-                                            .foregroundColor(.gray)
-                                    )
+                            // Profile Image - Load dari userData
+                            AsyncImage(url: getUserPhotoURL()) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                case .failure:
+                                    // Error loading - show placeholder
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .overlay(
+                                            Image(systemName: "person.fill")
+                                                .font(.system(size: 40))
+                                                .foregroundColor(.gray)
+                                        )
+                                case .empty:
+                                    // Loading state
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .overlay(
+                                            ProgressView()
+                                        )
+                                @unknown default:
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .overlay(
+                                            Image(systemName: "person.fill")
+                                                .font(.system(size: 40))
+                                                .foregroundColor(.gray)
+                                        )
+                                }
                             }
                             .frame(width: 100, height: 100)
                             .clipShape(Circle())
@@ -390,6 +408,42 @@ struct ProfileView: View {
                 // This prevents the page from closing immediately
             }
         }
+    }
+    
+    // MARK: - Helper Functions
+    
+    /// Construct URL foto profil user berdasarkan data yang tersedia
+    /// Logika sama seperti mobile lama (React Native)
+    private func getUserPhotoURL() -> URL? {
+        // Base URL untuk gambar
+        let baseImageURL = "https://vmedis.s3.amazonaws.com/"
+        
+        // Priority 1: Gunakan logo user jika ada (untuk user personal)
+        if let userLogo = userData.logo, !userLogo.isEmpty {
+            let photoURL = baseImageURL + userLogo
+            return URL(string: photoURL)
+        }
+        
+        // Priority 2: Gunakan logo klinik atau apotek berdasarkan app_jenis
+        // app_jenis: 1 = Klinik, 2 = Apotek
+        let appJenis = userData.app_jenis ?? 1
+        
+        if appJenis == 2 {
+            // Apotek - gunakan apt_logo jika ada
+            if let aptLogo = userData.kl_logo, !aptLogo.isEmpty {
+                let photoURL = baseImageURL + aptLogo
+                return URL(string: photoURL)
+            }
+        } else {
+            // Klinik - gunakan kl_logo jika ada
+            if let klLogo = userData.kl_logo, !klLogo.isEmpty {
+                let photoURL = baseImageURL + klLogo
+                return URL(string: photoURL)
+            }
+        }
+        
+        // Default: return nil untuk trigger placeholder
+        return nil
     }
 }
 

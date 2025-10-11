@@ -46,7 +46,7 @@ struct LoginPageView: View {
         }    }
     
     private var headerSection: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 12) {
             // Logo from Bundle Resource
             if let logoImage = UIImage(named: "logo") {
                 Image(uiImage: logoImage)
@@ -74,7 +74,7 @@ struct LoginPageView: View {
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.primary)
                 
-                Text("Masuk ke Sistem Apotek/Klinik")
+                Text("Masuk ke Vmedis Apotek / Klinik")
                     .font(.system(size: 16))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -153,12 +153,7 @@ struct LoginPageView: View {
     }    // MARK: - Footer Section
     private var footerSection: some View {
         VStack(spacing: 20) {
-            Text("Sistem Manajemen Apotek & Klinik")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Text("Powered by Vmedis")
+            Text("Powered by Vmedis V1.9.7")
                 .font(.system(size: 12))
                 .foregroundColor(.secondary.opacity(0.7))
         }
