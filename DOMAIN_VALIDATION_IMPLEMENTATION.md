@@ -19,29 +19,32 @@ Implementasi validasi domain sebelum login untuk memastikan subdomain yang dimas
 **Content-Type:** `application/x-www-form-urlencoded`
 
 **Parameters:**
+
 ```
 domain: {subdomain}
 ```
 
 ### Response Success
+
 ```json
 {
-    "status": "success",
-    "data": {
-        "app_id": "5177",
-        "kl_id": "458",
-        "kl_nama": "DEMO APOTEKKLINIK PEMUDA 30",
-        "kl_logo": "logo_458_20250925090436.png",
-        "apt_nama": "DEMO APOTEKKLINIK PEMUDA 30",
-        "apt_logo": "458251003131055.png"
-    }
+  "status": "success",
+  "data": {
+    "app_id": "5177",
+    "kl_id": "458",
+    "kl_nama": "DEMO APOTEKKLINIK PEMUDA 30",
+    "kl_logo": "logo_458_20250925090436.png",
+    "apt_nama": "DEMO APOTEKKLINIK PEMUDA 30",
+    "apt_logo": "458251003131055.png"
+  }
 }
 ```
 
 ### Response Failed
+
 ```json
 {
-    "status": "failed"
+  "status": "failed"
 }
 ```
 
@@ -52,6 +55,7 @@ domain: {subdomain}
 ### 1. **LoginService.swift** - Add Domain Validation
 
 #### New Structs
+
 ```swift
 struct DomainValidationResponse: Codable {
     let status: String
@@ -69,23 +73,24 @@ struct DomainData: Codable {
 ```
 
 #### New Function
+
 ```swift
 @MainActor
 class LoginService: ObservableObject {
     private let baseURL = "https://api3.vmedis.com"
     private let domainValidationURL = "https://api3penjualan.vmedis.com"
-    
+
     func validateDomain(_ domain: String) async throws -> DomainValidationResponse {
         guard let url = URL(string: "\(domainValidationURL)/klinik/validate-domain") else {
             throw LoginError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        
+
         let parameters = ["domain": domain]
-        
+
         // Convert to form data
         var formDataString = ""
         for (key, value) in parameters {
@@ -97,18 +102,19 @@ class LoginService: ObservableObject {
                 formDataString += "\(encodedKey)=\(encodedValue)"
             }
         }
-        
+
         request.httpBody = formDataString.data(using: .utf8)
-        
+
         let (data, _) = try await URLSession.shared.data(for: request)
         let domainResponse = try JSONDecoder().decode(DomainValidationResponse.self, from: data)
-        
+
         return domainResponse
     }
 }
 ```
 
 #### Updated Error Enum
+
 ```swift
 enum LoginError: LocalizedError {
     case invalidURL
@@ -120,7 +126,7 @@ enum LoginError: LocalizedError {
     case domainNotFound        // ← NEW
     case usernameNotFound      // ← NEW
     case wrongPassword         // ← NEW
-    
+
     var errorDescription: String? {
         switch self {
         case .domainNotFound:
@@ -140,19 +146,20 @@ enum LoginError: LocalizedError {
 ### 2. **LoginPageView.swift** - Update Login Flow
 
 #### Updated handleLogin()
+
 ```swift
 private func handleLogin() async {
     guard isFormValid else { return }
-    
+
     isLoading = true
     let cleanSubdomain = subdomain.trimmingCharacters(in: .whitespacesAndNewlines)
     let cleanUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
-    
+
     do {
         // STEP 1: Validasi domain terlebih dahulu
         print("=== STEP 1: VALIDATING DOMAIN ===")
         let domainValidation = try await loginService.validateDomain(cleanSubdomain)
-        
+
         if domainValidation.status != "success" {
             // Domain tidak tersedia
             await MainActor.run {
@@ -163,9 +170,9 @@ private func handleLogin() async {
             }
             return
         }
-        
+
         print("✅ Domain valid, proceeding to login...")
-        
+
         // STEP 2: Lanjutkan ke login jika domain valid
         print("=== STEP 2: LOGGING IN ===")
         let response = try await loginService.login(
@@ -173,7 +180,7 @@ private func handleLogin() async {
             password: password,
             domain: cleanSubdomain
         )
-        
+
         if response.status == "success" {
             // Login berhasil
             if let userData = response.data {
@@ -185,11 +192,11 @@ private func handleLogin() async {
             // Handle specific error messages
             await MainActor.run {
                 alertTitle = "Login Gagal"
-                
+
                 if let message = response.message {
                     if message.lowercased().contains("password") {
                         alertMessage = "Password salah"
-                    } else if message.lowercased().contains("username") || 
+                    } else if message.lowercased().contains("username") ||
                               message.lowercased().contains("tidak ditemukan") {
                         alertMessage = "Username salah"
                     } else {
@@ -198,16 +205,16 @@ private func handleLogin() async {
                 } else {
                     alertMessage = "Username atau password tidak valid"
                 }
-                
+
                 showAlert = true
             }
         }
-        
+
     } catch {
         // Handle errors
         await MainActor.run {
             alertTitle = "Error"
-            
+
             if let loginError = error as? LoginError {
                 switch loginError {
                 case .domainNotFound:
@@ -222,11 +229,11 @@ private func handleLogin() async {
             } else {
                 alertMessage = "Kesalahan jaringan: \(error.localizedDescription)"
             }
-            
+
             showAlert = true
         }
     }
-    
+
     await MainActor.run {
         isLoading = false
     }
@@ -297,19 +304,19 @@ private func handleLogin() async {
 
 ### 1. Domain Validation Errors
 
-| Scenario | Response | Alert Title | Alert Message |
-|----------|----------|-------------|---------------|
-| Domain not found | `status: "failed"` | Login Gagal | Domain tidak tersedia |
-| Network error | Exception | Error | Kesalahan jaringan: ... |
+| Scenario         | Response           | Alert Title | Alert Message           |
+| ---------------- | ------------------ | ----------- | ----------------------- |
+| Domain not found | `status: "failed"` | Login Gagal | Domain tidak tersedia   |
+| Network error    | Exception          | Error       | Kesalahan jaringan: ... |
 
 ### 2. Login Errors
 
-| Scenario | Response | Alert Title | Alert Message |
-|----------|----------|-------------|---------------|
-| Wrong password | `status: "error"`, `message: "password salah!"` | Login Gagal | Password salah |
-| Username not found | `status: "error"`, `message: "username tidak ditemukan dalam database!"` | Login Gagal | Username salah |
-| Other errors | `status: "error"`, custom message | Login Gagal | {message from API} |
-| Network error | Exception | Error | Kesalahan jaringan: ... |
+| Scenario           | Response                                                                 | Alert Title | Alert Message           |
+| ------------------ | ------------------------------------------------------------------------ | ----------- | ----------------------- |
+| Wrong password     | `status: "error"`, `message: "password salah!"`                          | Login Gagal | Password salah          |
+| Username not found | `status: "error"`, `message: "username tidak ditemukan dalam database!"` | Login Gagal | Username salah          |
+| Other errors       | `status: "error"`, custom message                                        | Login Gagal | {message from API}      |
+| Network error      | Exception                                                                | Error       | Kesalahan jaringan: ... |
 
 ---
 
@@ -318,16 +325,19 @@ private func handleLogin() async {
 ### ✅ Implemented
 
 1. **Two-Step Validation**
+
    - Domain validation first
    - Login only if domain is valid
 
 2. **Specific Error Messages**
+
    - "Domain tidak tersedia" - for invalid domain
    - "Password salah" - for wrong password
    - "Username salah" - for username not found
    - Custom messages for other errors
 
 3. **User-Friendly Flow**
+
    - Clear error messages in Indonesian
    - Loading state during validation
    - Stop login if domain invalid (save API call)
@@ -341,20 +351,21 @@ private func handleLogin() async {
 
 ## 🧪 Testing Scenarios
 
-| Test Case | Input | Expected Result |
-|-----------|-------|-----------------|
-| Valid domain + valid credentials | domain: "demo", username: "user1", password: "pass1" | Login success |
-| Invalid domain | domain: "notexist", username: "user1", password: "pass1" | Alert: "Domain tidak tersedia" |
-| Valid domain + wrong password | domain: "demo", username: "user1", password: "wrong" | Alert: "Password salah" |
-| Valid domain + wrong username | domain: "demo", username: "wronguser", password: "pass1" | Alert: "Username salah" |
-| Network error during validation | Network timeout | Alert: "Kesalahan jaringan: ..." |
-| Network error during login | Network timeout | Alert: "Kesalahan jaringan: ..." |
+| Test Case                        | Input                                                    | Expected Result                  |
+| -------------------------------- | -------------------------------------------------------- | -------------------------------- |
+| Valid domain + valid credentials | domain: "demo", username: "user1", password: "pass1"     | Login success                    |
+| Invalid domain                   | domain: "notexist", username: "user1", password: "pass1" | Alert: "Domain tidak tersedia"   |
+| Valid domain + wrong password    | domain: "demo", username: "user1", password: "wrong"     | Alert: "Password salah"          |
+| Valid domain + wrong username    | domain: "demo", username: "wronguser", password: "pass1" | Alert: "Username salah"          |
+| Network error during validation  | Network timeout                                          | Alert: "Kesalahan jaringan: ..." |
+| Network error during login       | Network timeout                                          | Alert: "Kesalahan jaringan: ..." |
 
 ---
 
 ## 📊 API Comparison
 
 ### Domain Validation API
+
 ```
 Endpoint: https://api3penjualan.vmedis.com/klinik/validate-domain
 Method: POST
@@ -363,6 +374,7 @@ Body: domain={subdomain}
 ```
 
 ### Login API
+
 ```
 Endpoint: https://api3.vmedis.com/sys/login
 Method: POST
@@ -375,12 +387,15 @@ Body: u={username}&p={password}&t={domain}&device=ios&ip=&date={timestamp}
 ## 🔗 Related Files
 
 1. **Services:**
+
    - `Services/LoginService.swift` - Domain validation & login logic
 
 2. **Views:**
+
    - `Views/Pages/LoginPageView.swift` - Login UI & flow
 
 3. **Models:**
+
    - `DomainValidationResponse` - Domain validation response model
    - `DomainData` - Domain data model
    - `LoginResponse` - Login response model
