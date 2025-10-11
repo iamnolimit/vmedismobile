@@ -2,6 +2,19 @@
 import SwiftUI
 import WebKit
 
+// MARK: - Custom WKWebView to Hide WebView UI Elements
+class NonSelectableWebView: WKWebView {
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        // Disable all context menu actions (copy, paste, select, etc.)
+        return false
+    }
+    
+    override var canBecomeFirstResponder: Bool {
+        // Prevent showing selection UI
+        return false
+    }
+}
+
 struct BypassWebView: UIViewRepresentable {
     let userData: UserData
     let destinationUrl: String
@@ -21,20 +34,49 @@ struct BypassWebView: UIViewRepresentable {
         if #available(iOS 16.0, *) {
             config.preferences.isElementFullscreenEnabled = false
         }
-        
-        // Add message handler for stats navigation
+          // Add message handler for stats navigation
         config.userContentController.add(context.coordinator, name: "navigateToReport")
         
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // ✅ Use custom NonSelectableWebView to hide all WebView UI elements
+        let webView = NonSelectableWebView(frame: .zero, configuration: config)
         webView.scrollView.bounces = true
         webView.allowsBackForwardNavigationGestures = false
-          // Inject CSS to disable text selection & hide web loading
+        
+        // ✅ Disable text selection & context menu to hide WebView behavior
+        webView.allowsLinkPreview = false  // Disable 3D Touch preview
+          // Disable data detectors (auto-detect phone, email, address, etc.)
+        if #available(iOS 14.0, *) {
+            config.dataDetectorTypes = []
+        }
+        
+        // ✅ Comprehensive CSS & JS to hide all WebView UI behaviors
         let css = """
-        * { -webkit-user-select: none; -webkit-touch-callout: none; user-select: none; }
+        * {
+            -webkit-user-select: none !important;
+            -webkit-touch-callout: none !important;
+            user-select: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        input, textarea {
+            -webkit-user-select: auto !important;
+            user-select: auto !important;
+        }
         [class*='splash'], [class*='loading'], [class*='spinner'] { display: none !important; }
         """
+        
+        let js = """
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false);
+        document.addEventListener('selectstart', function(e) { 
+            if (!e.target.matches('input, textarea')) { e.preventDefault(); }
+        }, false);
+        document.addEventListener('copy', function(e) {
+            if (!e.target.matches('input, textarea')) { e.preventDefault(); }
+        }, false);
+        """
+        
         let cssScript = "var s=document.createElement('style');s.innerHTML='\(css)';document.head.appendChild(s);"
-        let userScript = WKUserScript(source: cssScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let fullScript = cssScript + js
+        let userScript = WKUserScript(source: fullScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         webView.configuration.userContentController.addUserScript(userScript)
         
         // Add pull to refresh
