@@ -163,8 +163,7 @@ struct LoginPageView: View {
         !subdomain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
         !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
         !password.isEmpty
-    }
-      // MARK: - Actions
+    }    // MARK: - Actions
     private func handleLogin() async {
         guard isFormValid else { return }
         
@@ -173,6 +172,25 @@ struct LoginPageView: View {
         let cleanUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
         
         do {
+            // Step 1: Validasi domain terlebih dahulu
+            print("=== STEP 1: VALIDATING DOMAIN ===")
+            let domainValidation = try await loginService.validateDomain(cleanSubdomain)
+            
+            if domainValidation.status != "success" {
+                // Domain tidak tersedia
+                await MainActor.run {
+                    alertTitle = "Login Gagal"
+                    alertMessage = "Domain tidak tersedia"
+                    showAlert = true
+                    isLoading = false
+                }
+                return
+            }
+            
+            print("✅ Domain valid, proceeding to login...")
+            
+            // Step 2: Lanjutkan ke login jika domain valid
+            print("=== STEP 2: LOGGING IN ===")
             let response = try await loginService.login(
                 username: cleanUsername,
                 password: password,
@@ -202,10 +220,24 @@ struct LoginPageView: View {
                 }
                 print("=====================================")
                 
-            } else {
+            } else if response.status == "error" {
+                // Handle specific error messages
                 await MainActor.run {
                     alertTitle = "Login Gagal"
-                    alertMessage = "Username atau password tidak valid"
+                    
+                    // Check error message untuk menentukan alert yang sesuai
+                    if let message = response.message {
+                        if message.lowercased().contains("password") {
+                            alertMessage = "Password salah"
+                        } else if message.lowercased().contains("username") || message.lowercased().contains("tidak ditemukan") {
+                            alertMessage = "Username salah"
+                        } else {
+                            alertMessage = message
+                        }
+                    } else {
+                        alertMessage = "Username atau password tidak valid"
+                    }
+                    
                     showAlert = true
                 }
             }
@@ -213,15 +245,28 @@ struct LoginPageView: View {
         } catch {
             await MainActor.run {
                 alertTitle = "Error"
+                
                 if let loginError = error as? LoginError {
-                    alertMessage = loginError.errorDescription ?? "Terjadi kesalahan yang tidak diketahui"
+                    // Handle specific login errors
+                    switch loginError {
+                    case .domainNotFound:
+                        alertMessage = "Domain tidak tersedia"
+                    case .usernameNotFound:
+                        alertMessage = "Username salah"
+                    case .wrongPassword:
+                        alertMessage = "Password salah"
+                    default:
+                        alertMessage = loginError.errorDescription ?? "Terjadi kesalahan yang tidak diketahui"
+                    }
                 } else {
                     alertMessage = "Kesalahan jaringan: \(error.localizedDescription)"
                 }
+                
                 showAlert = true
             }
         }
-          await MainActor.run {
+        
+        await MainActor.run {
             isLoading = false
         }
     }

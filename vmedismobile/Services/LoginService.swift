@@ -34,9 +34,97 @@ struct UserData: Codable {
     let app_reg: String?
 }
 
+struct DomainValidationResponse: Codable {
+    let status: String
+    let data: DomainData?
+}
+
+struct DomainData: Codable {
+    let app_id: String?
+    let kl_id: String?
+    let kl_nama: String?
+    let kl_logo: String?
+    let apt_nama: String?
+    let apt_logo: String?
+    // ... other fields dapat ditambahkan sesuai kebutuhan
+}
+
 @MainActor
 class LoginService: ObservableObject {
     private let baseURL = "https://api3.vmedis.com"
+    private let domainValidationURL = "https://api3penjualan.vmedis.com"
+    
+    // MARK: - Domain Validation
+    
+    /// Validasi domain sebelum login
+    /// - Parameter domain: Subdomain yang akan divalidasi
+    /// - Returns: DomainValidationResponse berisi status dan data klinik/apotek
+    /// - Throws: LoginError jika terjadi kesalahan
+    func validateDomain(_ domain: String) async throws -> DomainValidationResponse {
+        // Buat URL
+        guard let url = URL(string: "\(domainValidationURL)/klinik/validate-domain") else {
+            throw LoginError.invalidURL
+        }
+        
+        // Setup request
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        // Buat form data parameters
+        let parameters = ["domain": domain]
+        
+        // Convert to form data string
+        var formDataString = ""
+        for (key, value) in parameters {
+            if !formDataString.isEmpty {
+                formDataString += "&"
+            }
+            if let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                formDataString += "\(encodedKey)=\(encodedValue)"
+            }
+        }
+        
+        // Set request body
+        request.httpBody = formDataString.data(using: .utf8)
+        
+        // Debug: Print request
+        print("=== DOMAIN VALIDATION ===")
+        print("Request URL: \(url)")
+        print("Form Data: \(formDataString)")
+        
+        // Kirim request
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check HTTP response
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+            }
+            
+            // Debug: Print raw response
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Raw Response: \(responseString)")
+            }
+            
+            // Decode response
+            do {
+                let domainResponse = try JSONDecoder().decode(DomainValidationResponse.self, from: data)
+                print("Domain Validation Status: \(domainResponse.status)")
+                return domainResponse
+            } catch {
+                print("Decoding Error: \(error)")
+                throw LoginError.decodingError("Failed to decode domain validation response")
+            }
+            
+        } catch {
+            print("Network Error: \(error)")
+            throw LoginError.networkError(error)
+        }
+    }
+    
+    // MARK: - Login
     
     func login(username: String, password: String, domain: String) async throws -> LoginResponse {
         // Format tanggal sesuai dengan format yang digunakan
@@ -141,6 +229,9 @@ enum LoginError: LocalizedError {
     case networkError(Error)
     case invalidCredentials
     case serverError(String)
+    case domainNotFound
+    case usernameNotFound
+    case wrongPassword
     
     var errorDescription: String? {
         switch self {
@@ -156,6 +247,12 @@ enum LoginError: LocalizedError {
             return "Invalid username or password"
         case .serverError(let message):
             return message
+        case .domainNotFound:
+            return "Domain tidak tersedia"
+        case .usernameNotFound:
+            return "Username salah"
+        case .wrongPassword:
+            return "Password salah"
         }
     }
 }
