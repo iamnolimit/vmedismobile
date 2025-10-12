@@ -26,8 +26,7 @@ struct StatsDeepLinkData: Codable {
  * Maps React routes to Swift native routes
  * React routes dari stats navigation akan dikonversi ke route Swift
  */
-struct StatsRouteMapper {
-    // Mapping React route -> Swift route identifier
+struct StatsRouteMapper {    // Mapping React route -> Swift route identifier
     static let routeMap: [String: String] = [
         // Penjualan & Kasir
         "/mobile/laporan-penjualan-obat": "lappenjualanobat",
@@ -36,11 +35,12 @@ struct StatsRouteMapper {
         // Customer
         "/mobile/laporan-registrasi-pasien": "lapregistrasipasien",
         "/mobile/laporan-kunjungan-pasien": "lapkunjunganpasien",
-        
-        // Obat
+          // Obat
         "/mobile/laporan-obat-expired": "lapobatexpired",
         "/mobile/laporan-obat-stok-habis": "lapobatstokhabis",
         "/mobile/laporan-stok-opname": "lapstokopname",
+        "/mobile/laporan-pembelian-obat": "lappembelianobat", // ✨ Added - Deeplink from ObatListCard
+        "/mobile/laporan-obat-terlaris": "lapobatterlaris", // ✨ Added - Deeplink from ObatListCard
         
         // Keuangan
         "/mobile/laporan-hutang-obat": "laphutangobat",
