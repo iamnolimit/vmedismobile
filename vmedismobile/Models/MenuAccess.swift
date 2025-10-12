@@ -37,32 +37,6 @@ struct MenuGroupUserResponse: Codable {
     let gak: Bool?               // Status flag
 }
 
-// MARK: - Menu Item untuk UI
-
-/// Menu item untuk tampilan UI dengan submenu support
-struct MenuItem: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let route: String?           // Route untuk menu tanpa submenu
-    var subMenus: [SubMenuItem]? // Submenu jika ada
-    
-    init(icon: String, title: String, route: String? = nil, subMenus: [SubMenuItem]? = nil) {
-        self.icon = icon
-        self.title = title
-        self.route = route
-        self.subMenus = subMenus
-    }
-}
-
-/// Submenu item
-struct SubMenuItem: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let route: String
-}
-
 // MARK: - URL Mapping Helper
 
 /// Helper untuk mapping route iOS ke mn_url server
@@ -171,8 +145,7 @@ class MenuAccessManager {
         }
         return decoded
     }
-    
-    /// Check apakah user punya akses ke route tertentu
+      /// Check apakah user punya akses ke route tertentu
     func hasAccess(to route: String) -> Bool {
         let menuAccess = getMenuAccess()
         
@@ -198,35 +171,6 @@ class MenuAccessManager {
         }
         
         return hasAccess
-    }
-    
-    /// Filter menu items berdasarkan hak akses user
-    func filterMenuItems(_ menuItems: [MenuItem]) -> [MenuItem] {
-        var filtered: [MenuItem] = []
-        
-        for menu in menuItems {
-            // Menu tanpa submenu
-            if let route = menu.route, menu.subMenus == nil {
-                if hasAccess(to: route) {
-                    filtered.append(menu)
-                }
-            }
-            // Menu dengan submenu
-            else if let subMenus = menu.subMenus {
-                // Filter submenu berdasarkan akses
-                let filteredSubs = subMenus.filter { hasAccess(to: $0.route) }
-                
-                // Hanya tampilkan parent jika ada submenu yang accessible
-                if !filteredSubs.isEmpty {
-                    var menuCopy = menu
-                    menuCopy.subMenus = filteredSubs
-                    filtered.append(menuCopy)
-                }
-            }
-        }
-        
-        print("📊 Filtered menu: \(filtered.count) items from \(menuItems.count) total")
-        return filtered
     }
     
     /// Clear all menu data

@@ -441,8 +441,36 @@ struct ProfileView: View {
             }
         }
     }
+      // MARK: - Helper Functions
     
-    // MARK: - Helper Functions
+    /// Filter menu items berdasarkan hak akses user
+    private func filterMenuItemsByAccess(_ menuItems: [MenuItem]) -> [MenuItem] {
+        var filtered: [MenuItem] = []
+        
+        for menu in menuItems {
+            // Menu tanpa submenu
+            if let route = menu.route, menu.subMenus == nil {
+                if MenuAccessManager.shared.hasAccess(to: route) {
+                    filtered.append(menu)
+                }
+            }
+            // Menu dengan submenu
+            else if let subMenus = menu.subMenus {
+                // Filter submenu berdasarkan akses
+                let filteredSubs = subMenus.filter { MenuAccessManager.shared.hasAccess(to: $0.route) }
+                
+                // Hanya tampilkan parent jika ada submenu yang accessible
+                if !filteredSubs.isEmpty {
+                    var menuCopy = menu
+                    menuCopy.subMenus = filteredSubs
+                    filtered.append(menuCopy)
+                }
+            }
+        }
+        
+        print("📊 Filtered menu: \(filtered.count) items from \(menuItems.count) total")
+        return filtered
+    }
     
     /// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
@@ -450,7 +478,7 @@ struct ProfileView: View {
         isLoadingMenu = true
         
         // Load menu access dari MenuAccessManager
-        let menuAccess = MenuAccessManager.shared.loadMenuAccess()
+        let menuAccess = MenuAccessManager.shared.getMenuAccess()
         userMenuAccess = menuAccess
         
         print("📋 User has access to \(menuAccess.count) menu items")
@@ -463,13 +491,13 @@ struct ProfileView: View {
             print("👑 Superadmin detected (lvl=\(userLevel)) - granting full access")
             filteredMenuItems = menuItems
         } else if menuAccess.isEmpty {
-            // Tidak ada data menu access - berikan full akses sebagai fallback
-            print("⚠️ No menu access data found - granting full access as fallback")
-            filteredMenuItems = menuItems
+            // Tidak ada data menu access - JANGAN tampilkan menu (user tidak punya akses)
+            print("⚠️ No menu access data found - user has NO access to any menu")
+            filteredMenuItems = []
         } else {
             // User biasa - filter menu berdasarkan hak akses
             print("👤 Regular user (lvl=\(userLevel)) - filtering menu based on access")
-            filteredMenuItems = MenuAccessManager.shared.filterMenuItems(menuItems)
+            filteredMenuItems = filterMenuItemsByAccess(menuItems)
             
             // Log hasil filtering
             print("✅ Filtered to \(filteredMenuItems.count) accessible menu items:")
