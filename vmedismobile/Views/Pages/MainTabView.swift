@@ -8,62 +8,89 @@ struct MainTabView: View {
     @State private var navigationRoute: String?
     @State private var shouldNavigateToReport = false
     @State private var submenuToExpand: String?
-    
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            // 1. Home Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
-                .id("home-tab") // Preserve WebView state
-                .tabItem {
-                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
-                    Text("Home")
-                }
-                .tag(0)
-              // 2. Obat Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=products")
-                .id("obat-tab") // Preserve WebView state
-                .tabItem {
-                    Image(systemName: selectedTab == 1 ? "pills.fill" : "pills")
-                    Text("Obat")
-                }
-                .tag(1)
-            
-            // 3. Keuangan Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
-                .id("keuangan-tab") // Preserve WebView state
-                .tabItem {
-                    Image(systemName: selectedTab == 2 ? "banknote.fill" : "banknote")
-                    Text("Keuangan")
-                }
-                .tag(2)
-            
-            // 4. Forecast Tab
-            LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
-                .id("forecast-tab") // Preserve WebView state
-                .tabItem {
-                    Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
-                    Text("Forecast")
-                }
-                .tag(3)            // 5. Account Tab - Using native ProfileView with Customer menu
-            ProfileView(
-                userData: userData,
-                navigationRoute: $navigationRoute,
-                shouldNavigate: $shouldNavigateToReport,
-                submenuToExpand: $submenuToExpand,
-                previousTab: $previousTab,
-                selectedTab: $selectedTab
-            )
-            .tabItem {
-                Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
-                Text("Akun")
+    @State private var accessibleTabs: [String] = []
+    @State private var isCheckingAccess = true
+      var body: some View {
+        if isCheckingAccess {
+            // Loading state saat check access
+            VStack {
+                ProgressView()
+                Text("Memeriksa akses...")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.top, 8)
             }
-            .tag(4)
-        }
-        .accentColor(.blue)
-        .preferredColorScheme(.light)
-        .onAppear {
-            setupTabBarAppearance()
-            setupStatsNavigationListener()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                checkTabAccess()
+            }
+        } else {
+            TabView(selection: $selectedTab) {
+                // 1. Home Tab - conditional
+                if accessibleTabs.contains("home") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
+                        .id("home-tab")
+                        .tabItem {
+                            Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                            Text("Home")
+                        }
+                        .tag(0)
+                }
+                
+                // 2. Obat Tab - conditional
+                if accessibleTabs.contains("products") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=products")
+                        .id("obat-tab")
+                        .tabItem {
+                            Image(systemName: selectedTab == 1 ? "pills.fill" : "pills")
+                            Text("Obat")
+                        }
+                        .tag(1)
+                }
+                
+                // 3. Keuangan Tab - conditional
+                if accessibleTabs.contains("orders") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
+                        .id("keuangan-tab")
+                        .tabItem {
+                            Image(systemName: selectedTab == 2 ? "banknote.fill" : "banknote")
+                            Text("Keuangan")
+                        }
+                        .tag(2)
+                }
+                
+                // 4. Forecast Tab - conditional
+                if accessibleTabs.contains("forecast") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
+                        .id("forecast-tab")
+                        .tabItem {
+                            Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
+                            Text("Forecast")
+                        }
+                        .tag(3)
+                }
+                
+                // 5. Account Tab - always accessible
+                ProfileView(
+                    userData: userData,
+                    navigationRoute: $navigationRoute,
+                    shouldNavigate: $shouldNavigateToReport,
+                    submenuToExpand: $submenuToExpand,
+                    previousTab: $previousTab,
+                    selectedTab: $selectedTab
+                )
+                .tabItem {
+                    Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
+                    Text("Akun")
+                }
+                .tag(4)
+            }
+            .accentColor(.blue)
+            .preferredColorScheme(.light)
+            .onAppear {
+                setupTabBarAppearance()
+                setupStatsNavigationListener()
+            }
         }
     }
       private func setupTabBarAppearance() {
@@ -128,6 +155,47 @@ struct MainTabView: View {
                 print("✅ Navigation state set: \(route)")
             }
         }
+    }
+    
+    // MARK: - Tab Access Control
+    
+    /// Check akses user ke setiap tab
+    private func checkTabAccess() {
+        print("🔐 Checking tab access for user...")
+        
+        let userLevel = userData.lvl ?? 999
+        
+        // Superadmin (lvl=1) - full access ke semua tab
+        if userLevel == 1 {
+            print("👑 Superadmin detected - granting full tab access")
+            accessibleTabs = ["home", "products", "orders", "forecast", "account"]
+            isCheckingAccess = false
+            return
+        }
+        
+        // Load menu access dari MenuAccessManager
+        let menuAccess = MenuAccessManager.shared.getMenuAccess()
+        
+        // Jika tidak ada menu access data
+        if menuAccess.isEmpty {
+            print("⚠️ No menu access data - granting default tabs")
+            // Default: hanya tab Akun yang accessible
+            accessibleTabs = ["account"]
+            isCheckingAccess = false
+            return
+        }
+        
+        // Regular user - check akses per tab
+        accessibleTabs = MenuAccessManager.shared.getAccessibleTabs()
+        
+        print("✅ Accessible tabs for user: \(accessibleTabs)")
+        print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
+        print("   - Obat: \(accessibleTabs.contains("products") ? "✓" : "✗")")
+        print("   - Keuangan: \(accessibleTabs.contains("orders") ? "✓" : "✗")")
+        print("   - Forecast: \(accessibleTabs.contains("forecast") ? "✓" : "✗")")
+        print("   - Akun: ✓ (always)")
+        
+        isCheckingAccess = false
     }
 }
 

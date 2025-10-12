@@ -45,6 +45,13 @@ struct MenuURLMapping {
     /// Mapping route iOS ke mn_url yang dipakai server
     /// Berdasarkan Sidemenumap2.js dari vmedis-mobile
     static let routeToURL: [String: String] = [
+        // Main Tabs - untuk check access ke tab utama
+        "home": "/home",
+        "products": "/produk",         // Tab Obat
+        "orders": "/transaksi",        // Tab Keuangan
+        "forecast": "/forecast",       // Tab Forecast
+        "account": "/akun",            // Tab Akun (always accessible)
+        
         // Laporan Apotek
         "lappembelianobat": "/laporan-transaksi-pembelian-obat",
         "laphutangobat": "/laporan-transaksi-bayar-hutang",
@@ -171,6 +178,26 @@ class MenuAccessManager {
         }
         
         return hasAccess
+    }
+    
+    /// Check apakah user punya akses ke tab utama
+    /// - Parameter tabName: Nama tab (home, products, orders, forecast, account)
+    /// - Returns: true jika user punya akses
+    func hasTabAccess(to tabName: String) -> Bool {
+        // Tab Akun selalu accessible (untuk logout dll)
+        if tabName == "account" {
+            return true
+        }
+        
+        // Check menggunakan hasAccess dengan mapping tab
+        return hasAccess(to: tabName)
+    }
+    
+    /// Get list tab yang accessible oleh user
+    /// - Returns: Array tab names yang bisa diakses
+    func getAccessibleTabs() -> [String] {
+        let allTabs = ["home", "products", "orders", "forecast", "account"]
+        return allTabs.filter { hasTabAccess(to: $0) }
     }
     
     /// Clear all menu data

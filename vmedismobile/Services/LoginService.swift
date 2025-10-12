@@ -51,7 +51,8 @@ struct DomainData: Codable {
     let app_id: String?
     let kl_id: String?
     let kl_nama: String?
-    let kl_logo: String?    let apt_nama: String?
+    let kl_logo: String?    
+    let apt_nama: String?
     let apt_logo: String?
     // ... other fields dapat ditambahkan sesuai kebutuhan
 }
