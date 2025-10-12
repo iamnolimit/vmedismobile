@@ -398,7 +398,7 @@ struct ProfileView: View {
     /// Logika sama seperti mobile lama (React Native)
     private func getUserPhotoURL() -> URL? {
         // Base URL untuk gambar
-        let baseImageURL = "https://vmedis.s3.amazonaws.com/"
+        let baseImageURL = "https://apt.vmedis.com/foto/"
         
         // Priority 1: Gunakan logo user jika ada (untuk user personal)
         if let userLogo = userData.logo, !userLogo.isEmpty {
