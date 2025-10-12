@@ -4,7 +4,7 @@ import Foundation
 struct LoginResponse: Codable {
     let status: String
     let message: String?
-    let data: UserData?
+    var data: UserData?
 }
 
 struct UserData: Codable {
@@ -32,6 +32,13 @@ struct UserData: Codable {
     let created_at: Int?
     let wizard: Int?
     let app_reg: String?
+    
+    // MARK: - Menu Access Properties (Added for leveling system)
+    /// Menyimpan akses menu untuk user (dari MenuGroupUser.Items1)
+    var aksesMenu: [String]?  // Array of mn_url yang user punya akses
+    
+    /// Menyimpan header menu (dari MenuGroupUser.Items)
+    var aksesMenuHead: [String]?  // Array of mn_nama header
 }
 
 struct DomainValidationResponse: Codable {
@@ -48,6 +55,25 @@ struct DomainData: Codable {
     let apt_nama: String?
     let apt_logo: String?
     // ... other fields dapat ditambahkan sesuai kebutuhan
+}
+
+// MARK: - Menu Access Response Models
+struct MenuGroupUserResponse: Codable {
+    let data: MenuGroupUserData?
+}
+
+struct MenuGroupUserData: Codable {
+    let MenuGroupUser: MenuGroupUser?
+}
+
+struct MenuGroupUser: Codable {
+    let Items1: [MenuAccessItem]?
+}
+
+struct MenuAccessItem: Codable {
+    let mn_url: String?
+    let mn_kode: String?
+    let mn_nama: String?
 }
 
 @MainActor
@@ -224,7 +250,39 @@ class LoginService: ObservableObject {
             
             // Decode response
             do {
-                let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+                var loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+                
+                // Jika login sukses, fetch menu access
+                if loginResponse.status == "success", var userData = loginResponse.data {
+                    print("✅ Login successful, fetching menu access...")
+                    
+                    // Fetch menu access dari server
+                    do {
+                        let menuAccess = try await fetchMenuAccess(
+                            grId: userData.gr_id ?? 0,
+                            level: userData.lvl ?? 999,
+                            token: userData.token ?? ""
+                        )
+                        
+                        // Update userData dengan menu access
+                        userData.aksesMenu = menuAccess.aksesMenu
+                        userData.aksesMenuHead = menuAccess.aksesMenuHead
+                        
+                        // Update response dengan userData yang sudah ada menu access
+                        loginResponse = LoginResponse(
+                            status: loginResponse.status,
+                            message: loginResponse.message,
+                            data: userData
+                        )
+                        
+                        print("✅ Menu access fetched and stored: \(menuAccess.aksesMenu.count) items")
+                    } catch {
+                        print("⚠️ Failed to fetch menu access: \(error)")
+                        // Tidak throw error, login tetap berhasil walau menu access gagal
+                        // User akan dapat full access sebagai fallback
+                    }
+                }
+                
                 return loginResponse
             } catch {
                 print("Detailed Decoding Error: \(error)")
@@ -247,6 +305,103 @@ class LoginService: ObservableObject {
         } catch {
             print("Network Error: \(error)")
             throw LoginError.networkError(error)
+        }
+    }
+    
+    // MARK: - Fetch Menu Access
+    
+    /// Fetch menu access dari server berdasarkan gr_id dan level user
+    private func fetchMenuAccess(grId: Int, level: Int, token: String) async throws -> (aksesMenu: [String], aksesMenuHead: [String]) {
+        print("🔐 Fetching menu access for gr_id: \(grId), level: \(level)")
+        
+        // Jika superadmin (level 1), tidak perlu fetch - return empty (akan dapat full access)
+        if level == 1 {
+            print("👑 Superadmin detected - skipping menu fetch")
+            return ([], [])
+        }
+        
+        // GraphQL endpoint
+        guard let url = URL(string: "\(baseURL)/graphql") else {
+            throw LoginError.invalidURL
+        }
+        
+        // GraphQL query
+        let query = """
+        query {
+          MenuGroupUser(gr_id: \(grId)) {
+            Items1 {
+              mn_url
+              mn_kode
+              mn_nama
+            }
+          }
+        }
+        """
+        
+        // Setup request
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        // Buat request body
+        let requestBody: [String: Any] = ["query": query]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+        
+        print("📡 GraphQL Query: \(query)")
+        
+        // Kirim request
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check HTTP response
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+            }
+            
+            // Debug: Print raw response
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("GraphQL Response: \(responseString)")
+            }
+            
+            // Decode response
+            let menuResponse = try JSONDecoder().decode(MenuGroupUserResponse.self, from: data)
+            
+            // Extract menu access
+            var aksesMenu: [String] = []
+            var aksesMenuHead: [String] = []
+            
+            if let items = menuResponse.data?.MenuGroupUser?.Items1 {
+                for item in items {
+                    if let mnUrl = item.mn_url, !mnUrl.isEmpty {
+                        aksesMenu.append(mnUrl)
+                    }
+                    if let mnNama = item.mn_nama, !mnNama.isEmpty {
+                        aksesMenuHead.append(mnNama)
+                    }
+                }
+            }
+            
+            print("✅ Menu access parsed: \(aksesMenu.count) URLs, \(aksesMenuHead.count) headers")
+            
+            // Simpan ke MenuAccessManager
+            let menuAccessItems = (menuResponse.data?.MenuGroupUser?.Items1 ?? []).compactMap { item -> MenuAccess? in
+                guard let mnUrl = item.mn_url else { return nil }
+                return MenuAccess(
+                    mn_url: mnUrl,
+                    mn_kode: item.mn_kode ?? "",
+                    mn_nama: item.mn_nama ?? ""
+                )
+            }
+            
+            MenuAccessManager.shared.saveMenuAccess(menuAccessItems)
+            print("💾 Menu access saved to local storage")
+            
+            return (aksesMenu, aksesMenuHead)
+            
+        } catch {
+            print("❌ Failed to fetch menu access: \(error)")
+            throw error
         }
     }
 }

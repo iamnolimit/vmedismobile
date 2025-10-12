@@ -172,6 +172,11 @@ struct ProfileView: View {
     @EnvironmentObject var appState: AppState
     @State private var expandedMenuIds: Set<UUID> = []
     @State private var navigateToRoute: String?
+    
+    // MARK: - Menu Access Properties
+    @State private var userMenuAccess: [MenuAccess] = []
+    @State private var filteredMenuItems: [MenuItem] = []
+    @State private var isLoadingMenu: Bool = true
       // Menu structure based on provided data
     let menuItems: [MenuItem] = [
         MenuItem(icon: "person.3", title: "Customer", route: "customers"),
@@ -205,7 +210,7 @@ struct ProfileView: View {
             SubMenuItem(icon: "square.stack.3d.up", title: "Laporan Stok Obat", route: "lapstokobat"),
             SubMenuItem(icon: "arrow.left.arrow.right", title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
-    ];    var body: some View {
+    ];var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // Scrollable Content
@@ -269,27 +274,54 @@ struct ProfileView: View {
                             }
                         }
                         .padding()
-                        
-                        // Menu Options with Accordion
+                          // Menu Options with Accordion
                         VStack(spacing: 0) {
-                            ForEach(menuItems) { menu in
-                                AccordionMenuRow(
-                                    menu: menu,
-                                    isExpanded: expandedMenuIds.contains(menu.id),
-                                    userData: userData,
-                                    onToggle: {
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            if expandedMenuIds.contains(menu.id) {
-                                                expandedMenuIds.remove(menu.id)
-                                            } else {
-                                                expandedMenuIds.insert(menu.id)
+                            // Loading state
+                            if isLoadingMenu {
+                                HStack {
+                                    ProgressView()
+                                        .padding(.trailing, 8)
+                                    Text("Memuat menu...")
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            } else if filteredMenuItems.isEmpty {
+                                // Empty state - no accessible menu
+                                VStack(spacing: 12) {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.orange)
+                                    Text("Tidak ada menu yang dapat diakses")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                    Text("Hubungi administrator untuk bantuan")
+                                        .font(.caption)
+                                        .foregroundColor(.gray.opacity(0.7))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            } else {
+                                // Display accessible menus
+                                ForEach(filteredMenuItems) { menu in
+                                    AccordionMenuRow(
+                                        menu: menu,
+                                        isExpanded: expandedMenuIds.contains(menu.id),
+                                        userData: userData,
+                                        onToggle: {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                if expandedMenuIds.contains(menu.id) {
+                                                    expandedMenuIds.remove(menu.id)
+                                                } else {
+                                                    expandedMenuIds.insert(menu.id)
+                                                }
                                             }
                                         }
+                                    )
+                                    
+                                    if menu.id != filteredMenuItems.last?.id {
+                                        Divider()
                                     }
-                                )
-                                
-                                if menu.id != menuItems.last?.id {
-                                    Divider()
                                 }
                             }
                             
@@ -369,15 +401,20 @@ struct ProfileView: View {
             }
             .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+            .onAppear {
+                loadUserMenuAccess()
+            }
+        }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
-        .onChange(of: submenuToExpand) { newSubmenu in
+        .onAppear {
+            // Load menu access saat view muncul
+            loadUserMenuAccess()
+        }        .onChange(of: submenuToExpand) { newSubmenu in
             if let submenu = newSubmenu {
                 print("📂 Expanding submenu: \(submenu)")
                 
-                // Find menu dengan title yang match
-                if let menuToExpand = menuItems.first(where: { $0.title == submenu }) {
+                // Find menu dengan title yang match dari filteredMenuItems
+                if let menuToExpand = filteredMenuItems.first(where: { $0.title == submenu }) {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         expandedMenuIds.insert(menuToExpand.id)
                     }
@@ -389,7 +426,7 @@ struct ProfileView: View {
                     submenuToExpand = nil
                 }
             }
-        }        .onChange(of: shouldNavigate) { newValue in
+        }.onChange(of: shouldNavigate) { newValue in
             if newValue, let route = navigationRoute {
                 print("🎯 ProfileView triggering navigation to: \(route)")
                 print("   Setting navigateToRoute to: \(route)")
@@ -406,6 +443,47 @@ struct ProfileView: View {
     }
     
     // MARK: - Helper Functions
+    
+    /// Load dan filter menu berdasarkan hak akses user
+    private func loadUserMenuAccess() {
+        print("🔐 Loading user menu access...")
+        isLoadingMenu = true
+        
+        // Load menu access dari MenuAccessManager
+        let menuAccess = MenuAccessManager.shared.loadMenuAccess()
+        userMenuAccess = menuAccess
+        
+        print("📋 User has access to \(menuAccess.count) menu items")
+        
+        // Check user level - lvl=1 adalah superadmin dengan full akses
+        let userLevel = userData.lvl ?? 999
+        
+        if userLevel == 1 {
+            // Superadmin - berikan full akses ke semua menu
+            print("👑 Superadmin detected (lvl=\(userLevel)) - granting full access")
+            filteredMenuItems = menuItems
+        } else if menuAccess.isEmpty {
+            // Tidak ada data menu access - berikan full akses sebagai fallback
+            print("⚠️ No menu access data found - granting full access as fallback")
+            filteredMenuItems = menuItems
+        } else {
+            // User biasa - filter menu berdasarkan hak akses
+            print("👤 Regular user (lvl=\(userLevel)) - filtering menu based on access")
+            filteredMenuItems = MenuAccessManager.shared.filterMenuItems(menuItems)
+            
+            // Log hasil filtering
+            print("✅ Filtered to \(filteredMenuItems.count) accessible menu items:")
+            for menu in filteredMenuItems {
+                if let subMenus = menu.subMenus {
+                    print("   📂 \(menu.title) - \(subMenus.count) submenus")
+                } else {
+                    print("   📄 \(menu.title) - route: \(menu.route ?? "none")")
+                }
+            }
+        }
+        
+        isLoadingMenu = false
+    }
     
     /// Construct URL foto profil user berdasarkan data yang tersedia
     /// Logika sama seperti mobile lama (React Native)
