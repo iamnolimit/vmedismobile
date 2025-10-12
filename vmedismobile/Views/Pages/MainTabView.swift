@@ -397,19 +397,16 @@ struct ProfileView: View {
                     label: { EmptyView() }
                 )
                 .frame(width: 0, height: 0)
-                .opacity(0)
-            }
+                .opacity(0)            }
             .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                loadUserMenuAccess()
-            }
-        }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+        }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
         .onAppear {
             // Load menu access saat view muncul
             loadUserMenuAccess()
-        }        .onChange(of: submenuToExpand) { newSubmenu in
+        }.onChange(of: submenuToExpand) { newSubmenu in
             if let submenu = newSubmenu {
                 print("📂 Expanding submenu: \(submenu)")
                 
@@ -442,8 +439,7 @@ struct ProfileView: View {
         }
     }
       // MARK: - Helper Functions
-    
-    /// Filter menu items berdasarkan hak akses user
+      /// Filter menu items berdasarkan hak akses user
     private func filterMenuItemsByAccess(_ menuItems: [MenuItem]) -> [MenuItem] {
         var filtered: [MenuItem] = []
         
@@ -461,9 +457,14 @@ struct ProfileView: View {
                 
                 // Hanya tampilkan parent jika ada submenu yang accessible
                 if !filteredSubs.isEmpty {
-                    var menuCopy = menu
-                    menuCopy.subMenus = filteredSubs
-                    filtered.append(menuCopy)
+                    // Create new MenuItem with filtered submenus
+                    let filteredMenu = MenuItem(
+                        icon: menu.icon,
+                        title: menu.title,
+                        route: menu.route,
+                        subMenus: filteredSubs
+                    )
+                    filtered.append(filteredMenu)
                 }
             }
         }
