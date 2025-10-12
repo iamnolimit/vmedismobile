@@ -175,8 +175,7 @@ struct LoginPageView: View {
             // Step 1: Validasi domain terlebih dahulu
             print("=== STEP 1: VALIDATING DOMAIN ===")
             let domainValidation = try await loginService.validateDomain(cleanSubdomain)
-            
-            if domainValidation.status != "success" {
+              if domainValidation.status != "success" {
                 // Domain tidak tersedia
                 await MainActor.run {
                     alertTitle = "Login Gagal"
@@ -241,10 +240,9 @@ struct LoginPageView: View {
                     showAlert = true
                 }
             }
-            
-        } catch {
+              } catch {
             await MainActor.run {
-                alertTitle = "Error"
+                alertTitle = "Login Gagal"
                 
                 if let loginError = error as? LoginError {
                     // Handle specific login errors
@@ -252,14 +250,16 @@ struct LoginPageView: View {
                     case .domainNotFound:
                         alertMessage = "Domain tidak tersedia"
                     case .usernameNotFound:
-                        alertMessage = "Username salah"
+                        alertMessage = "Username tidak ditemukan"
                     case .wrongPassword:
                         alertMessage = "Password salah"
+                    case .networkError:
+                        alertMessage = "Kesalahan jaringan, silakan coba lagi"
                     default:
-                        alertMessage = loginError.errorDescription ?? "Terjadi kesalahan yang tidak diketahui"
+                        alertMessage = "Terjadi kesalahan, silakan coba lagi"
                     }
                 } else {
-                    alertMessage = "Kesalahan jaringan: \(error.localizedDescription)"
+                    alertMessage = "Terjadi kesalahan, silakan coba lagi"
                 }
                 
                 showAlert = true
