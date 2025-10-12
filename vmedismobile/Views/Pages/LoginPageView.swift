@@ -153,7 +153,7 @@ struct LoginPageView: View {
     }    // MARK: - Footer Section
     private var footerSection: some View {
         VStack(spacing: 20) {
-            Text("Powered by Vmedis V1.9.7")
+            Text(AppVersion.poweredByText)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary.opacity(0.7))
         }

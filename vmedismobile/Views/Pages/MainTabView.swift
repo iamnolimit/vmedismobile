@@ -205,10 +205,10 @@ struct ProfileView: View {
             SubMenuItem(icon: "square.stack.3d.up", title: "Laporan Stok Obat", route: "lapstokobat"),
             SubMenuItem(icon: "arrow.left.arrow.right", title: "Laporan Pergantian Shift", route: "lappergantianshift")
         ])
-    ];
-      var body: some View {
+    ];    var body: some View {
         NavigationView {
-            ZStack {
+            VStack(spacing: 0) {
+                // Scrollable Content
                 ScrollView {
                     VStack(spacing: 20) {                        // Profile Header
                         VStack(spacing: 16) {
@@ -309,9 +309,20 @@ struct ProfileView: View {
                         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                     .padding()
-                }                .background(Color.gray.opacity(0.05))
-                .navigationTitle("Akun")
-                .navigationBarTitleDisplayMode(.inline)
+                }
+                .background(Color.gray.opacity(0.05))
+                
+                // Fixed Footer - tidak ikut scroll
+                VStack(spacing: 0) {
+                    Divider()
+                    
+                    Text(AppVersion.poweredByText)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary.opacity(0.7))
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white)
+                }
                 
                 // Programmatic NavigationLink - hidden but functional
                 NavigationLink(
@@ -356,6 +367,8 @@ struct ProfileView: View {
                 .frame(width: 0, height: 0)
                 .opacity(0)
             }
+            .navigationTitle("Akun")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
