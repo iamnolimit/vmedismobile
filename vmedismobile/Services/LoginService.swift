@@ -51,26 +51,26 @@ struct DomainData: Codable {
     let app_id: String?
     let kl_id: String?
     let kl_nama: String?
-    let kl_logo: String?
-    let apt_nama: String?
+    let kl_logo: String?    let apt_nama: String?
     let apt_logo: String?
     // ... other fields dapat ditambahkan sesuai kebutuhan
 }
 
-// MARK: - Menu Access Response Models
-struct MenuGroupUserResponse: Codable {
-    let data: MenuGroupUserData?
+// MARK: - GraphQL Response Models (for menu access)
+/// Wrapper untuk GraphQL response
+private struct GraphQLMenuResponse: Codable {
+    let data: GraphQLMenuData?
 }
 
-struct MenuGroupUserData: Codable {
-    let MenuGroupUser: MenuGroupUser?
+private struct GraphQLMenuData: Codable {
+    let MenuGroupUser: GraphQLMenuGroupUser?
 }
 
-struct MenuGroupUser: Codable {
-    let Items1: [MenuAccessItem]?
+private struct GraphQLMenuGroupUser: Codable {
+    let Items1: [GraphQLMenuItem]?
 }
 
-struct MenuAccessItem: Codable {
+private struct GraphQLMenuItem: Codable {
     let mn_url: String?
     let mn_kode: String?
     let mn_nama: String?
@@ -358,14 +358,13 @@ class LoginService: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse {
                 print("HTTP Status Code: \(httpResponse.statusCode)")
             }
-            
-            // Debug: Print raw response
+              // Debug: Print raw response
             if let responseString = String(data: data, encoding: .utf8) {
                 print("GraphQL Response: \(responseString)")
             }
             
             // Decode response
-            let menuResponse = try JSONDecoder().decode(MenuGroupUserResponse.self, from: data)
+            let menuResponse = try JSONDecoder().decode(GraphQLMenuResponse.self, from: data)
             
             // Extract menu access
             var aksesMenu: [String] = []
