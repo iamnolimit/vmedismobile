@@ -87,14 +87,13 @@ class LoginService: ObservableObject {
     private let retryDelay: UInt64 = 1_000_000_000 // 1 second
     
     // MARK: - Domain Validation
-    
-    /// Validasi domain sebelum login
+      /// Validasi domain sebelum login
     /// - Parameter domain: Subdomain yang akan divalidasi
     /// - Returns: DomainValidationResponse berisi status dan data klinik/apotek
     /// - Throws: LoginError jika terjadi kesalahan
     func validateDomain(_ domain: String) async throws -> DomainValidationResponse {
         return try await performRequestWithRetry {
-            try await _validateDomain(domain)
+            try await self._validateDomain(domain)
         }
     }
     
@@ -189,12 +188,11 @@ class LoginService: ObservableObject {
             print("Network Error: \(error)")
             throw LoginError.networkError(error)
         }
-    }    
-    // MARK: - Login
+    }      // MARK: - Login
     
     func login(username: String, password: String, domain: String) async throws -> LoginResponse {
         return try await performRequestWithRetry {
-            try await _login(username: username, password: password, domain: domain)
+            try await self._login(username: username, password: password, domain: domain)
         }
     }
     
