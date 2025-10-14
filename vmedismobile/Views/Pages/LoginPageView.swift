@@ -171,12 +171,6 @@ struct LoginPageView: View {
         let cleanSubdomain = subdomain.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // BUGFIX: iOS 18 - Add small delay to ensure network is ready after permission granted
-        // This prevents false "wrong username/password" errors on first login
-        if #available(iOS 18.0, *) {
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
-        }
-        
         do {
             // Step 1: Validasi domain terlebih dahulu
             print("=== STEP 1: VALIDATING DOMAIN ===")
@@ -245,33 +239,36 @@ struct LoginPageView: View {
                     
                     showAlert = true
                 }
-            }              } catch {
+            }          } catch {
             await MainActor.run {
-                alertTitle = "Login Gagal"
-                
                 if let loginError = error as? LoginError {
                     // Handle specific login errors
                     switch loginError {
+                    case .networkError:
+                        print("⚠️ Network error occurred, but not showing alert to user")
+                        break
                     case .domainNotFound:
+                        alertTitle = "Login Gagal"
                         alertMessage = "Domain tidak tersedia"
-                    case .networkError:
-                        // BUGFIX: iOS 18 - Better network error message
-                        // Don't show "wrong password" for network issues
-                        alertMessage = "Tidak dapat terhubung ke server. Pastikan koneksi internet Anda aktif dan coba lagi."
+                        showAlert = true
                     case .usernameNotFound:
+                        alertTitle = "Login Gagal"
                         alertMessage = "Username tidak ditemukan"
+                        showAlert = true
                     case .wrongPassword:
+                        alertTitle = "Login Gagal"
                         alertMessage = "Password salah"
-                    case .networkError:
-                        alertMessage = "Kesalahan jaringan, silakan coba lagi"
+                        showAlert = true
                     default:
+                        alertTitle = "Login Gagal"
                         alertMessage = "Terjadi kesalahan, silakan coba lagi"
+                        showAlert = true
                     }
                 } else {
+                    alertTitle = "Login Gagal"
                     alertMessage = "Terjadi kesalahan, silakan coba lagi"
+                    showAlert = true
                 }
-                
-                showAlert = true
             }
         }
         

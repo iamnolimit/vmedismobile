@@ -82,23 +82,13 @@ class LoginService: ObservableObject {
     private let baseURL = "https://api3.vmedis.com"
     private let domainValidationURL = "https://api3penjualan.vmedis.com"
     
-    // BUGFIX: iOS 18 - Retry configuration for network requests
-    private let maxRetries = 2
-    private let retryDelay: UInt64 = 1_000_000_000 // 1 second
-    
     // MARK: - Domain Validation
-      /// Validasi domain sebelum login
+    
+    /// Validasi domain sebelum login
     /// - Parameter domain: Subdomain yang akan divalidasi
     /// - Returns: DomainValidationResponse berisi status dan data klinik/apotek
     /// - Throws: LoginError jika terjadi kesalahan
     func validateDomain(_ domain: String) async throws -> DomainValidationResponse {
-        return try await performRequestWithRetry {
-            try await self._validateDomain(domain)
-        }
-    }
-    
-    /// Internal domain validation method
-    private func _validateDomain(_ domain: String) async throws -> DomainValidationResponse {
         // Buat URL
         guard let url = URL(string: "\(domainValidationURL)/klinik/validate-domain") else {
             throw LoginError.invalidURL
@@ -188,16 +178,11 @@ class LoginService: ObservableObject {
             print("Network Error: \(error)")
             throw LoginError.networkError(error)
         }
-    }      // MARK: - Login
-    
-    func login(username: String, password: String, domain: String) async throws -> LoginResponse {
-        return try await performRequestWithRetry {
-            try await self._login(username: username, password: password, domain: domain)
-        }
     }
     
-    /// Internal login method
-    private func _login(username: String, password: String, domain: String) async throws -> LoginResponse {
+    // MARK: - Login
+    
+    func login(username: String, password: String, domain: String) async throws -> LoginResponse {
         // Format tanggal sesuai dengan format yang digunakan
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
@@ -450,67 +435,8 @@ enum LoginError: LocalizedError {
             return "Domain tidak tersedia"
         case .usernameNotFound:
             return "Username salah"
-        case .wrongPassword:            return "Password salah"
+        case .wrongPassword:
+            return "Password salah"
         }
-    }
-}
-
-// MARK: - Retry Helper Extension
-extension LoginService {
-    /// BUGFIX: iOS 18 - Retry mechanism for network requests
-    /// This helps handle the case where network permission is just granted
-    /// and the network stack needs a moment to initialize
-    private func performRequestWithRetry<T>(
-        operation: @escaping () async throws -> T
-    ) async throws -> T {
-        var lastError: Error?
-        
-        for attempt in 0...maxRetries {
-            do {
-                if attempt > 0 {
-                    print("🔄 Retry attempt \(attempt) of \(maxRetries)...")
-                    try await Task.sleep(nanoseconds: retryDelay)
-                }
-                
-                let result = try await operation()
-                
-                if attempt > 0 {
-                    print("✅ Request succeeded on retry attempt \(attempt)")
-                }
-                
-                return result
-            } catch let error as URLError {
-                // Network errors that might be temporary (iOS 18 permission issue)
-                lastError = error
-                
-                if attempt < maxRetries {
-                    print("⚠️ Network error (attempt \(attempt + 1)): \(error.localizedDescription)")
-                    
-                    // Only retry for specific network errors that might be temporary
-                    switch error.code {
-                    case .notConnectedToInternet,
-                         .networkConnectionLost,
-                         .timedOut,
-                         .cannotFindHost,
-                         .cannotConnectToHost,
-                         .dnsLookupFailed:
-                        // These errors might be temporary after permission grant
-                        continue
-                    default:
-                        // Other errors shouldn't be retried
-                        throw LoginError.networkError(error)
-                    }
-                } else {
-                    print("❌ Max retries reached. Last error: \(error.localizedDescription)")
-                    throw LoginError.networkError(error)
-                }
-            } catch {
-                // Non-network errors shouldn't be retried
-                throw error
-            }
-        }
-        
-        // This shouldn't happen, but just in case
-        throw LoginError.networkError(lastError ?? NSError(domain: "Unknown", code: -1))
     }
 }
