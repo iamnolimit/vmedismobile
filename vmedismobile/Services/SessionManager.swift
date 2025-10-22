@@ -35,19 +35,17 @@ class SessionManager: ObservableObject {
             updatedSession.userData = userData  // ← UPDATE USERDATA!
             updatedSession.updateAccessTime()
             updatedSession.isActive = true
-            sessions[existingIndex] = updatedSession
-              // Set as active
+            sessions[existingIndex] = updatedSession            // Set as active
             setActiveSession(updatedSession)
-            Swift.print("✅ Updated existing session for \(userData.username ?? "") with fresh userData")
+            print("✅ Updated existing session for \(userData.username ?? "") with fresh userData")
         } else {
             // Check limit
             if sessions.count >= maxSessions {
-                // Remove oldest inactive session
-                if let oldestIndex = sessions.enumerated()
+                // Remove oldest inactive session                if let oldestIndex = sessions.enumerated()
                     .filter({ !$0.element.isActive })
                     .min(by: { $0.element.lastAccessTime < $1.element.lastAccessTime })?.offset {
                     sessions.remove(at: oldestIndex)
-                    Swift.print("🗑️ Removed oldest session to make room")
+                    print("🗑️ Removed oldest session to make room")
                 }
             }
             
@@ -55,28 +53,28 @@ class SessionManager: ObservableObject {
             let newSession = AccountSession(userData: userData, isActive: true)
             sessions.append(newSession)
             setActiveSession(newSession)
-            Swift.print("✅ Added new session for \(userData.username ?? "")")
+            print("✅ Added new session for \(userData.username ?? "")")
         }
-          Swift.print("📊 Total sessions: \(sessions.count)")
+          print("📊 Total sessions: \(sessions.count)")
         for (index, session) in sessions.enumerated() {
             let menuCount = session.userData.aksesMenu?.count ?? 0
             let isSuper = session.userData.lvl == 1
-            Swift.print("   \(index + 1). \(session.displayName) - Active: \(session.isActive) - Menu: \(menuCount) items - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+            print("   \(index + 1). \(session.displayName) - Active: \(session.isActive) - Menu: \(menuCount) items - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
         }
         
         saveSessions()
     }
       /// Switch ke session lain    func switchSession(_ session: AccountSession) {
-        Swift.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        Swift.print("🔄 SWITCHING SESSION")
-        Swift.print("   Target user: \(session.userData.username ?? "unknown")")
-        Swift.print("   Target ID: \(session.userData.id ?? "N/A")")
-        Swift.print("   Target level: \(String(describing: session.userData.lvl ?? 999))")
-        Swift.print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔄 SWITCHING SESSION")
+        print("   Target user: \(session.userData.username ?? "unknown")")
+        print("   Target ID: \(session.userData.id ?? "N/A")")
+        print("   Target level: \(String(describing: session.userData.lvl ?? 999))")
+        print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
         if let aksesMenu = session.userData.aksesMenu {
-            Swift.print("   Menu URLs: \(aksesMenu)")
+            print("   Menu URLs: \(aksesMenu)")
         }
-        Swift.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         
         // Deactivate all sessions
         for i in 0..<sessions.count {
@@ -93,8 +91,8 @@ class SessionManager: ObservableObject {
             setActiveSession(updatedSession)
             saveSessions()
             
-            Swift.print("✅ Session switched successfully")
-            Swift.print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+            print("✅ Session switched successfully")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
         }
     }
     
@@ -114,7 +112,7 @@ class SessionManager: ObservableObject {
         }
         
         saveSessions()
-        Swift.print("🗑️ Removed session: \(session.displayName)")
+        print("🗑️ Removed session: \(session.displayName)")
     }
     
     /// Get active session
@@ -145,9 +143,9 @@ class SessionManager: ObservableObject {
         do {
             let encoded = try JSONEncoder().encode(sessions)
             UserDefaults.standard.set(encoded, forKey: sessionsKey)
-            Swift.print("💾 Saved \(sessions.count) sessions")
+            print("💾 Saved \(sessions.count) sessions")
         } catch {
-            Swift.print("❌ Failed to save sessions: \(error)")
+            print("❌ Failed to save sessions: \(error)")
         }
     }
       private func loadSessions() {
@@ -155,18 +153,18 @@ class SessionManager: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: sessionsKey) {
             do {
                 sessions = try JSONDecoder().decode([AccountSession].self, from: data)
-                Swift.print("✅ Loaded \(sessions.count) sessions from persistence")
+                print("✅ Loaded \(sessions.count) sessions from persistence")
                 
                 // Debug: Print menu access untuk setiap session
                 for (index, session) in sessions.enumerated() {
                     let menuCount = session.userData.aksesMenu?.count ?? 0
                     let isSuper = session.userData.lvl == 1
-                    Swift.print("   \(index + 1). \(session.displayName)")
-                    Swift.print("      - ID: \(session.userData.id ?? "N/A")")
-                    Swift.print("      - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
-                    Swift.print("      - Menu Access: \(menuCount) items")
+                    print("   \(index + 1). \(session.displayName)")
+                    print("      - ID: \(session.userData.id ?? "N/A")")
+                    print("      - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+                    print("      - Menu Access: \(menuCount) items")
                     if let aksesMenu = session.userData.aksesMenu, !aksesMenu.isEmpty {
-                        Swift.print("      - URLs: \(aksesMenu)")
+                        print("      - URLs: \(aksesMenu)")
                     }
                 }
                 
@@ -174,13 +172,13 @@ class SessionManager: ObservableObject {
                 if let activeId = UserDefaults.standard.string(forKey: activeSessionKey),
                    let active = sessions.first(where: { $0.id == activeId }) {
                     activeSession = active
-                    Swift.print("✅ Active session: \(active.displayName)")
+                    print("✅ Active session: \(active.displayName)")
                 } else if let first = sessions.first(where: { $0.isActive }) {
                     activeSession = first
-                    Swift.print("✅ Active session: \(first.displayName)")
+                    print("✅ Active session: \(first.displayName)")
                 }
             } catch {
-                Swift.print("❌ Failed to load sessions: \(error)")
+                print("❌ Failed to load sessions: \(error)")
                 sessions = []
             }
         }
@@ -192,7 +190,7 @@ class SessionManager: ObservableObject {
         activeSession = nil
         UserDefaults.standard.removeObject(forKey: sessionsKey)
         UserDefaults.standard.removeObject(forKey: activeSessionKey)
-        Swift.print("🗑️ Cleared all sessions")
+        print("🗑️ Cleared all sessions")
     }
 }
 
