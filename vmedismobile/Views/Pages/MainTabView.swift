@@ -893,14 +893,14 @@ struct AccountManagementSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Main Dropdown Button
+            // Main Dropdown Button - SAMA dengan MenuRowContent padding
             Button(action: {
                 withAnimation(.spring(response: 0.3)) {
                     showingAccountDropdown.toggle()
                 }
             }) {
                 HStack(spacing: 12) {
-                    // Avatar
+                    // Avatar - sama seperti icon menu (30pt frame)
                     if let activeSession = sessionManager.activeSession {
                         AsyncImage(url: getPhotoURL(for: activeSession)) { phase in
                             switch phase {
@@ -933,15 +933,14 @@ struct AccountManagementSection: View {
                                     )
                             }
                         }
-                        .frame(width: 40, height: 40)
+                        .frame(width: 30, height: 30) // Sama dengan icon menu
                         .clipShape(Circle())
                         
                         // Info
                         VStack(alignment: .leading, spacing: 2) {
                             Text(activeSession.displayName)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                                .font(.body) // Sama dengan menu title
+                                .foregroundColor(.black)
                             
                             Text(activeSession.domainInfo)
                                 .font(.caption)
@@ -949,26 +948,25 @@ struct AccountManagementSection: View {
                         }
                     } else {
                         Text("Tidak ada akun tersimpan")
-                            .font(.subheadline)
+                            .font(.body)
                             .foregroundColor(.gray)
                     }
                     
                     Spacer()
                     
-                    // Chevron
+                    // Chevron - sama dengan menu
                     Image(systemName: showingAccountDropdown ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12))
+                        .font(.system(size: 14)) // Sama dengan menu chevron
                         .foregroundColor(.gray)
                 }
-                .padding(12)
-                .background(Color.blue.opacity(0.05))
-                .cornerRadius(10)
+                .padding() // SAMA dengan MenuRowContent - 16pt default padding
+                .background(Color.white)
+                .contentShape(Rectangle())
             }
-            
-            // Dropdown List
+              // Dropdown List - SAMA dengan submenu styling
             if showingAccountDropdown {
                 VStack(spacing: 0) {
-                    // All Sessions (including active)
+                    // All Sessions (including active) - SAMA dengan submenu items
                     ForEach(sessionManager.sessions) { session in
                         Button(action: {
                             if !session.isActive {
@@ -979,7 +977,11 @@ struct AccountManagementSection: View {
                             }
                         }) {
                             HStack(spacing: 12) {
-                                // Avatar
+                                // Indentation 20pt - SAMA dengan submenu
+                                Spacer()
+                                    .frame(width: 20)
+                                
+                                // Avatar - sama dengan submenu icon (24pt frame)
                                 AsyncImage(url: getPhotoURL(for: session)) { phase in
                                     switch phase {
                                     case .success(let image):
@@ -1011,19 +1013,20 @@ struct AccountManagementSection: View {
                                             )
                                     }
                                 }
-                                .frame(width: 36, height: 36)
+                                .frame(width: 24, height: 24) // Sama dengan submenu icon
                                 .clipShape(Circle())
                                 
                                 // Info
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(session.displayName)
-                                        .font(.subheadline)
-                                        .foregroundColor(.primary)
+                                        .font(.subheadline) // Sama dengan submenu title
+                                        .foregroundColor(.black)
                                     
                                     Text(session.domainInfo)
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
+                                .padding(.leading, 8) // Sama dengan submenu
                                 
                                 Spacer()
                                 
@@ -1043,14 +1046,15 @@ struct AccountManagementSection: View {
                                         showingDeleteAlert = true
                                     }) {
                                         Image(systemName: "trash")
-                                            .font(.system(size: 13))
+                                            .font(.system(size: 12))
                                             .foregroundColor(.red)
                                             .padding(6)
                                     }
                                 }
                             }
-                            .padding(10)
-                            .background(session.isActive ? Color.blue.opacity(0.08) : Color.white)
+                            .padding(.vertical, 12) // SAMA dengan submenu vertical padding
+                            .padding(.horizontal, 16) // SAMA dengan submenu horizontal padding
+                            .background(session.isActive ? Color.gray.opacity(0.05) : Color.white) // Sama dengan submenu background
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -1058,25 +1062,32 @@ struct AccountManagementSection: View {
                         
                         if session.id != sessionManager.sessions.last?.id {
                             Divider()
-                                .padding(.leading, 58)
+                                .padding(.leading, 60) // SAMA dengan submenu divider
                         }
                     }
                     
-                    // Add Account Button
+                    // Add Account Button - SAMA dengan submenu item
                     Divider()
                     
                     Button(action: {
                         showingAccountDropdown = false
                         showingAddAccountSheet = true
                     }) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 12) {
+                            // Indentation 20pt
+                            Spacer()
+                                .frame(width: 20)
+                            
+                            // Icon - 24pt frame sama dengan submenu
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 14))
                                 .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
+                                .frame(width: 24)
                             
                             Text("Tambah Akun Baru")
-                                .font(.subheadline)
-                                .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
+                                .font(.subheadline) // Sama dengan submenu
+                                .foregroundColor(sessionManager.canAddMoreSessions() ? .black : .gray)
+                                .padding(.leading, 8)
                             
                             Spacer()
                             
@@ -1084,22 +1095,22 @@ struct AccountManagementSection: View {
                                 Text("\(sessionManager.sessions.count)/5")
                                     .font(.caption)
                                     .foregroundColor(.gray)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
                             }
                         }
-                        .padding(12)
+                        .padding(.vertical, 12) // SAMA dengan submenu
+                        .padding(.horizontal, 16) // SAMA dengan submenu
                         .background(Color.gray.opacity(0.03))
                         .contentShape(Rectangle())
                     }
                     .disabled(!sessionManager.canAddMoreSessions())
                 }
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                .padding(.top, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding()
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
