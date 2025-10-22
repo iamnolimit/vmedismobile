@@ -269,7 +269,7 @@ func switchSession(_ session: AccountSession) {
     print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print("🔄 SWITCHING SESSION")
     print("   Target user: \(session.userData.username ?? "unknown")")
-    print("   Target ID: \(String(session.userData.id) ?? "N/A")")
+    print("   Target ID: \(session.userData.id ?? "N/A")")
     print("   Target level: \(userLevel)")
     print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
     if let aksesMenu = session.userData.aksesMenu {
@@ -313,7 +313,7 @@ private func loadSessions() {
                 let isSuper = session.userData.lvl == 1
                 let userLevel = session.userData.lvl ?? 0
                 print("   \(index + 1). \(session.displayName)")
-                print("      - ID: \(String(session.userData.id) ?? "N/A")")
+                print("      - ID: \(session.userData.id ?? "N/A")")
                 print("      - Level: \(userLevel) \(isSuper ? "(Superadmin)" : "")")
                 print("      - Menu Access: \(menuCount) items")
                 if let aksesMenu = session.userData.aksesMenu, !aksesMenu.isEmpty {
@@ -361,7 +361,7 @@ func switchAccount(to session: AccountSession) {
         let isSuper = session.userData.lvl == 1
         let userLevel = session.userData.lvl ?? 0
         print("✅ Switched to: \(session.userData.username ?? "unknown")")
-        print("   - ID: \(String(session.userData.id) ?? "N/A")")
+        print("   - ID: \(session.userData.id ?? "N/A")")
         print("   - Level: \(userLevel) \(isSuper ? "(Superadmin)" : "")")
         print("   - Menu Access: \(menuCount) items in userData.aksesMenu")
         if let aksesMenu = session.userData.aksesMenu {
