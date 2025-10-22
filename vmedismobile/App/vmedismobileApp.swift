@@ -7,15 +7,9 @@ struct vmedismobileApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if appState.isLoggedIn, let userData = appState.userData {
-                MainTabView(userData: userData)
-                    .environmentObject(appState)
-                    .preferredColorScheme(.light) // Force light mode
-            } else {
-                ContentView()
-                    .environmentObject(appState)
-                    .preferredColorScheme(.light) // Force light mode
-            }
+            ContentView()
+                .environmentObject(appState)
+                .preferredColorScheme(.light) // Force light mode
         }
     }
 }
