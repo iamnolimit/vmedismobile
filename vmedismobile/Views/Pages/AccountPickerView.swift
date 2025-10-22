@@ -112,15 +112,30 @@ struct AccountPickerRow: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 16) {
-                // Avatar
+            HStack(spacing: 16) {                // Avatar
                 AsyncImage(url: getPhotoURL()) { phase in
                     switch phase {
                     case .success(let image):
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                    case .failure, .empty, @unknown _:
+                    case .failure:
+                        Circle()
+                            .fill(Color.blue.opacity(0.2))
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.blue)
+                            )
+                    case .empty:
+                        Circle()
+                            .fill(Color.blue.opacity(0.2))
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.blue)
+                            )
+                    @unknown default:
                         Circle()
                             .fill(Color.blue.opacity(0.2))
                             .overlay(
