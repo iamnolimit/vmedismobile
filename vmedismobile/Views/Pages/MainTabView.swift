@@ -23,54 +23,49 @@ struct MainTabView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
                 checkTabAccess()
-            }
-        } else {
+            }        } else {
             TabView(selection: $selectedTab) {
                 // 1. Home Tab - conditional
                 if accessibleTabs.contains("home") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile")
-                        .id("home-tab")
+                        .id("home-tab-\(userData.id ?? "0")")
                         .tabItem {
                             Image(systemName: selectedTab == 0 ? "house.fill" : "house")
                             Text("Home")
                         }
                         .tag(0)
                 }
-                
-                // 2. Obat Tab - conditional
+                  // 2. Obat Tab - conditional
                 if accessibleTabs.contains("products") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=products")
-                        .id("obat-tab")
+                        .id("obat-tab-\(userData.id ?? "0")")
                         .tabItem {
                             Image(systemName: selectedTab == 1 ? "pills.fill" : "pills")
                             Text("Obat")
                         }
                         .tag(1)
                 }
-                
-                // 3. Keuangan Tab - conditional
+                  // 3. Keuangan Tab - conditional
                 if accessibleTabs.contains("orders") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
-                        .id("keuangan-tab")
+                        .id("keuangan-tab-\(userData.id ?? "0")")
                         .tabItem {
                             Image(systemName: selectedTab == 2 ? "banknote.fill" : "banknote")
                             Text("Keuangan")
                         }
                         .tag(2)
                 }
-                
-                // 4. Forecast Tab - conditional
+                  // 4. Forecast Tab - conditional
                 if accessibleTabs.contains("forecast") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
-                        .id("forecast-tab")
+                        .id("forecast-tab-\(userData.id ?? "0")")
                         .tabItem {
                             Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                             Text("Forecast")
                         }
                         .tag(3)
                 }
-                  // 5. Account Tab - always accessible
-                ProfileView(
+                  // 5. Account Tab - always accessible                ProfileView(
                     userData: userData,
                     navigationRoute: $navigationRoute,
                     shouldNavigate: $shouldNavigateToReport,
@@ -78,21 +73,26 @@ struct MainTabView: View {
                     previousTab: $previousTab,
                     selectedTab: $selectedTab
                 )
-                .id(userData.id) // Force re-render when userData changes (critical for account switching!)
+                .id("profile-tab-\(userData.id ?? "0")") // Force re-render when userData changes (critical for account switching!)
                 .tabItem {
                     Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
                     Text("Akun")
                 }
                 .tag(4)
-            }            .accentColor(.blue)
+            }
+            .id("tabview-\(userData.id ?? "0")") // Force TabView re-render on userData change
+            .accentColor(.blue)
             .preferredColorScheme(.light)
             .onAppear {
                 setupTabBarAppearance()
                 setupStatsNavigationListener()
+                // Check tab access on appear
+                checkTabAccess()
             }
-            .onChange(of: userData.id) { _ in
+            .onChange(of: userData.id) { newId in
                 // Reload tab access when userData changes (account switch)
-                print("🔄 UserData changed in MainTabView - rechecking tab access")
+                print("🔄 UserData.id changed in MainTabView from previous to: \(newId ?? "N/A")")
+                print("   Current userData in MainTabView: ID=\(userData.id ?? "N/A"), Level=\(userData.lvl ?? 0)")
                 checkTabAccess()
             }
         }
