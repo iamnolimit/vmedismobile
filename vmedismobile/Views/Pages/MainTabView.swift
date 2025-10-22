@@ -10,7 +10,7 @@ struct MainTabView: View {
     @State private var submenuToExpand: String?
     @State private var accessibleTabs: [String] = []
     @State private var isCheckingAccess = true
-      var body: some View {
+    var body: some View {
         if isCheckingAccess {
             // Loading state saat check access
             VStack {
@@ -93,7 +93,7 @@ struct MainTabView: View {
             }
         }
     }
-      private func setupTabBarAppearance() {
+    private func setupTabBarAppearance() {
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithOpaqueBackground()
         tabBarAppearance.backgroundColor = UIColor.white
@@ -245,7 +245,7 @@ struct ProfileView: View {
     @State private var userMenuAccess: [MenuAccess] = []
     @State private var filteredMenuItems: [MenuItem] = []
     @State private var isLoadingMenu: Bool = true
-      // Menu structure based on provided data
+    // Menu structure based on provided data
     let menuItems: [MenuItem] = [
         MenuItem(icon: "person.3", title: "Customer", route: "customers"),
         
@@ -339,10 +339,14 @@ struct ProfileView: View {
                                         .background(Color.blue.opacity(0.1))
                                         .cornerRadius(6)
                                 }
-                            }
-                        }
+                            }                        }
                         .padding()
-                          // Menu Options with Accordion
+                        
+                        // Account Management Section
+                        AccountManagementSection()
+                            .padding(.horizontal)
+                        
+                        // Menu Options with Accordion
                         VStack(spacing: 0) {
                             // Loading state
                             if isLoadingMenu {
@@ -392,16 +396,29 @@ struct ProfileView: View {
                                     }
                                 }
                             }
-                            
-                            Divider()
-                              // Logout Option
+                              Divider()
+                              // Logout Options
                             ProfileOptionRow(
                                 icon: "rectangle.portrait.and.arrow.right",
-                                title: "Logout",
+                                title: "Logout Akun Ini",
                                 action: {
                                     appState.logout()
                                 }
                             )
+                            
+                            // Show "Logout Semua" only if multiple sessions exist
+                            if SessionManager.shared.sessions.count > 1 {
+                                Divider()
+                                
+                                ProfileOptionRow(
+                                    icon: "rectangle.portrait.and.arrow.right.fill",
+                                    title: "Logout Semua Akun",
+                                    titleColor: .red,
+                                    action: {
+                                        appState.logoutAllAccounts()
+                                    }
+                                )
+                            }
                             
                         }
                         .background(Color.white)
@@ -506,8 +523,8 @@ struct ProfileView: View {
             }
         }
     }
-      // MARK: - Helper Functions
-      /// Filter menu items berdasarkan hak akses user
+    // MARK: - Helper Functions
+    /// Filter menu items berdasarkan hak akses user
     private func filterMenuItemsByAccess(_ menuItems: [MenuItem]) -> [MenuItem] {
         var filtered: [MenuItem] = []
         
@@ -639,7 +656,7 @@ struct AccordionMenuRow: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-              // Sub Menus (Collapsible)
+            // Sub Menus (Collapsible)
             if let subMenus = menu.subMenus, isExpanded {
                 VStack(spacing: 0) {
                     ForEach(subMenus) { subMenu in
@@ -723,6 +740,7 @@ struct MenuRowContent: View {
 struct ProfileOptionRow: View {
     let icon: String
     let title: String
+    var titleColor: Color = .black
     let action: () -> Void
     
     var body: some View {
@@ -730,12 +748,12 @@ struct ProfileOptionRow: View {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(.blue)
+                    .foregroundColor(titleColor == .red ? .red : .blue)
                     .frame(width: 30)
                 
                 Text(title)
                     .font(.body)
-                    .foregroundColor(.black)
+                    .foregroundColor(titleColor)
                 
                 Spacer()
                 
@@ -795,6 +813,275 @@ struct ReportPageView: View {
         case "lapstokobat": return "Stok Obat"
         case "lappergantianshift": return "Pergantian Shift"
         default: return "Laporan"
+        }
+    }
+}
+
+// MARK: - Account Management Section
+struct AccountManagementSection: View {
+    @StateObject private var sessionManager = SessionManager.shared
+    @EnvironmentObject var appState: AppState
+    @State private var showingAddAccountSheet = false
+    @State private var showingDeleteAlert = false
+    @State private var sessionToDelete: AccountSession?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Kelola Akun")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("\(sessionManager.sessions.count)/\(5) akun tersimpan")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                // Add Account Button
+                Button(action: {
+                    showingAddAccountSheet = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Tambah")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        sessionManager.canAddMoreSessions() ? 
+                            Color.blue.opacity(0.1) : Color.gray.opacity(0.1)
+                    )
+                    .cornerRadius(8)
+                }
+                .disabled(!sessionManager.canAddMoreSessions())
+            }
+            
+            // Account List
+            if sessionManager.sessions.isEmpty {
+                Text("Tidak ada akun tersimpan")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 20)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(sessionManager.sessions) { session in
+                        AccountSessionRow(
+                            session: session,
+                            isActive: session.id == sessionManager.activeSession?.id,
+                            onSwitch: {
+                                if !session.isActive {
+                                    appState.switchAccount(to: session)
+                                }
+                            },
+                            onDelete: {
+                                sessionToDelete = session
+                                showingDeleteAlert = true
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .sheet(isPresented: $showingAddAccountSheet) {
+            AddAccountSheet()
+        }
+        .alert(isPresented: $showingDeleteAlert) {
+            Alert(
+                title: Text("Hapus Akun"),
+                message: Text("Apakah Anda yakin ingin menghapus akun \(sessionToDelete?.displayName ?? "")?"),
+                primaryButton: .destructive(Text("Hapus")) {
+                    if let session = sessionToDelete {
+                        sessionManager.removeSession(session)
+                    }
+                },
+                secondaryButton: .cancel()
+            )
+        }
+    }
+}
+
+// MARK: - Account Session Row
+struct AccountSessionRow: View {
+    let session: AccountSession
+    let isActive: Bool
+    let onSwitch: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Avatar
+            AsyncImage(url: getPhotoURL()) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                case .failure, .empty, @unknown _:
+                    Circle()
+                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(isActive ? .blue : .gray)
+                        )
+                }
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(isActive ? Color.blue : Color.clear, lineWidth: 2)
+            )
+            
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(session.displayName)
+                        .font(.subheadline)
+                        .fontWeight(isActive ? .semibold : .regular)
+                        .foregroundColor(.primary)
+                    
+                    if isActive {
+                        Text("Aktif")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green)
+                            .cornerRadius(4)
+                    }
+                }
+                
+                Text(session.domainInfo)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Actions
+            HStack(spacing: 8) {
+                if !isActive {
+                    // Switch Button
+                    Button(action: onSwitch) {
+                        Text("Ganti")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                    }
+                }
+                
+                // Delete Button
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14))
+                        .foregroundColor(.red)
+                        .padding(6)
+                }
+            }
+        }
+        .padding(12)
+        .background(isActive ? Color.blue.opacity(0.05) : Color.gray.opacity(0.03))
+        .cornerRadius(10)
+    }
+    
+    private func getPhotoURL() -> URL? {
+        let baseImageURL = "https://apt.vmedis.com/foto/"
+        
+        if let userLogo = session.userData.logo, !userLogo.isEmpty {
+            return URL(string: baseImageURL + userLogo)
+        }
+        
+        let appJenis = session.userData.app_jenis ?? 1
+        if appJenis == 2 {
+            if let aptLogo = session.userData.kl_logo, !aptLogo.isEmpty {
+                return URL(string: baseImageURL + aptLogo)
+            }
+        } else {
+            if let klLogo = session.userData.kl_logo, !klLogo.isEmpty {
+                return URL(string: baseImageURL + klLogo)
+            }
+        }
+        
+        return nil
+    }
+}
+
+// MARK: - Add Account Sheet
+struct AddAccountSheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var appState: AppState
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 60))
+                    .foregroundColor(.blue)
+                    .padding(.top, 60)
+                
+                Text("Tambah Akun Baru")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top, 20)
+                
+                Text("Anda akan logout dari akun saat ini dan diarahkan ke halaman login untuk menambahkan akun baru.")
+                    .font(.body)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 10)
+                
+                Spacer()
+                
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                    // Logout tanpa menghapus sessions yang lain
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        appState.logout()
+                    }
+                }) {
+                    Text("Lanjutkan ke Login")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal, 30)
+                .padding(.bottom, 20)
+                
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Text("Batal")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .padding(.bottom, 30)
+                }
+            }
+            .navigationBarTitle("", displayMode: .inline)
+            .navigationBarItems(trailing: Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.gray)
+            })
         }
     }
 }

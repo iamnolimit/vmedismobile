@@ -1,4 +1,4 @@
-// File: App/ContentView.swift - Direct Login for Apotek/Klinik
+// File: App/ContentView.swift - With Account Picker Support
 import SwiftUI
 
 struct ContentView: View {
@@ -8,11 +8,14 @@ struct ContentView: View {
         Group {
             if appState.isLoggedIn, let userData = appState.userData {
                 MainTabView(userData: userData)
+            } else if appState.showAccountPicker {
+                AccountPickerView()
             } else {
                 LoginPageView()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.isLoggedIn)
+        .animation(.easeInOut(duration: 0.3), value: appState.showAccountPicker)
     }
 }
 

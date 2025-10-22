@@ -1,24 +1,86 @@
-// File: App/AppState.swift - With Persistent Storage
+// File: App/AppState.swift - With Multi-Session Support
 import SwiftUI
 
 class AppState: ObservableObject {
     @Published var isLoggedIn = false
     @Published var userData: UserData?
+    @Published var showAccountPicker = false
     
     private let userDefaultsKey = "isUserLoggedIn"
     private let userDataKey = "userData"
     
     init() {
         loadLoginState()
+        checkForMultipleSessions()
+    }
+    
+    private func checkForMultipleSessions() {
+        Task { @MainActor in
+            let sessions = SessionManager.shared.sessions
+            
+            // Jika ada multiple sessions dan belum ada active session
+            if sessions.count > 1 && !isLoggedIn {
+                showAccountPicker = true
+            }
+        }
     }
     
     func login(with userData: UserData) {
         self.userData = userData
         self.isLoggedIn = true
         saveLoginState()
+        
+        // Add to session manager
+        Task { @MainActor in
+            SessionManager.shared.addOrUpdateSession(userData: userData)
+        }
     }
     
     func logout() {
+        // Only logout current session, keep other sessions
+        if let currentUserData = self.userData {
+            Task { @MainActor in
+                // Find and remove current session
+                if let session = SessionManager.shared.sessions.first(where: { 
+                    $0.userData.username == currentUserData.username && 
+                    $0.userData.domain == currentUserData.domain 
+                }) {
+                    SessionManager.shared.removeSession(session)
+                }
+                
+                // Check if there are other sessions
+                if let nextSession = SessionManager.shared.getActiveSession() {
+                    // Switch to another session
+                    self.userData = nextSession.userData
+                    self.isLoggedIn = true
+                    saveLoginState()
+                } else {
+                    // No more sessions, full logout
+                    self.userData = nil
+                    self.isLoggedIn = false
+                    clearLoginState()
+                }
+            }
+        } else {
+            self.userData = nil
+            self.isLoggedIn = false
+            clearLoginState()
+        }
+    }
+    
+    func switchAccount(to session: AccountSession) {
+        Task { @MainActor in
+            SessionManager.shared.switchSession(session)
+            self.userData = session.userData
+            self.isLoggedIn = true
+            saveLoginState()
+        }
+    }
+    
+    func logoutAllAccounts() {
+        Task { @MainActor in
+            SessionManager.shared.clearAllSessions()
+        }
         self.userData = nil
         self.isLoggedIn = false
         clearLoginState()
