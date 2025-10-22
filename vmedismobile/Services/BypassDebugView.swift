@@ -13,12 +13,11 @@ struct BypassDebugView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                // User Data Summary
-                VStack(alignment: .leading, spacing: 8) {
+                // User Data Summary                VStack(alignment: .leading, spacing: 8) {
                     Text("User Data:")
                         .font(.headline)
                     
-                    Text("ID: \(userData.id ?? 0)")
+                    Text("ID: \(userData.id ?? "N/A")")
                     Text("Username: \(userData.username ?? "N/A")")
                     Text("Domain: \(userData.domain ?? "N/A")")
                     Text("Klinik: \(userData.kl_nama ?? "N/A")")

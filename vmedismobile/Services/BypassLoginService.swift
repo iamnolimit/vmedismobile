@@ -49,11 +49,10 @@ class BypassLoginService: ObservableObject {
     
     private let baseUrlReact = "https://v3.vmedis.com/"
     
-    private init() {}
-      func generateTokenUrl(userData: UserData, destinationUrl: String = "mobile") async throws -> URL {
+    private init() {}    func generateTokenUrl(userData: UserData, destinationUrl: String = "mobile") async throws -> URL {
         // Generate access token similar to PHP implementation
         let currentTimeMillis = Int64(Date().timeIntervalSince1970 * 1000)
-        let userId = userData.id ?? 0
+        let userId = userData.id ?? "0"
         let accessToken = Data("\(userId)--SED--\(currentTimeMillis)".utf8).base64EncodedString()
         
         // First, try the API-based approach
@@ -113,10 +112,9 @@ class BypassLoginService: ObservableObject {
             return try await generateFallbackUrl(userData: userData, destinationUrl: destinationUrl, accessToken: accessToken)
         }
     }
-      private func generateFallbackUrl(userData: UserData, destinationUrl: String, accessToken: String) async throws -> URL {
-        // Fallback approach - try to construct URL with direct token
+      private func generateFallbackUrl(userData: UserData, destinationUrl: String, accessToken: String) async throws -> URL {        // Fallback approach - try to construct URL with direct token
         let domain = userData.domain ?? ""
-        let userId = userData.id ?? 0
+        let userId = userData.id ?? "0"
         
         // Try different URL patterns that might work
         let fallbackUrls = [

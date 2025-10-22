@@ -200,10 +200,9 @@ struct LoginPageView: View {
                 print("=== LOGIN SUCCESS - APOTEK/KLINIK ===")
                 print("Domain: \(cleanSubdomain)")
                 print("Username: \(cleanUsername)")
-                
-                if let userData = response.data {
+                  if let userData = response.data {
                     print("User Data:")
-                    print("- ID: \(userData.id ?? 0)")
+                    print("- ID: \(userData.id ?? "N/A")")
                     print("- Username: \(userData.username ?? "")")
                     print("- Token: \(userData.token ?? "")")
                     print("- Klinik: \(userData.kl_nama ?? "")")

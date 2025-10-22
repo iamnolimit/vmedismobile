@@ -8,7 +8,7 @@ struct LoginResponse: Codable {
 }
 
 struct UserData: Codable {
-    let id: Int?
+    let id: String?  // Changed from Int? to String? for consistency
     let username: String?
     let password: String?
     let token: String?
