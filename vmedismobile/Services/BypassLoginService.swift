@@ -9,7 +9,7 @@ struct TokenRequest: Codable {
 }
 
 struct TokenUserData: Codable {
-    let user_id: Int  // Changed from Int to String to match UserData.id
+    let user_id: String  // String to match UserData.id
     let username: String
     let gr_id: Int?
     let app_id: String?
