@@ -67,13 +67,12 @@ class SessionManager: ObservableObject {
         
         saveSessions()
     }
-      /// Switch ke session lain
-    func switchSession(_ session: AccountSession) {
+      /// Switch ke session lain    func switchSession(_ session: AccountSession) {
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔄 SWITCHING SESSION")
         print("   Target user: \(session.userData.username ?? "unknown")")
         print("   Target ID: \(session.userData.id ?? "N/A")")
-        print("   Target level: \(session.userData.lvl ?? 999)")
+        print("   Target level: \(String(describing: session.userData.lvl ?? 999))")
         print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
         if let aksesMenu = session.userData.aksesMenu {
             print("   Menu URLs: \(aksesMenu)")
