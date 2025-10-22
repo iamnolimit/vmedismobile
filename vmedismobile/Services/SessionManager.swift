@@ -71,7 +71,7 @@ class SessionManager: ObservableObject {
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔄 SWITCHING SESSION")
         print("   Target user: \(session.userData.username ?? "unknown")")
-        print("   Target ID: \(session.userData.id ?? "N/A")")
+        print("   Target ID: \(String(session.userData.id) ?? "N/A")")
         print("   Target level: \(userLevel)")
         print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
         if let aksesMenu = session.userData.aksesMenu {
@@ -164,7 +164,7 @@ class SessionManager: ObservableObject {
                     let isSuper = session.userData.lvl == 1
                     let userLevel = session.userData.lvl ?? 0
                     print("   \(index + 1). \(session.displayName)")
-                    print("      - ID: \(session.userData.id ?? "N/A")")
+                    print("      - ID: \(String(session.userData.id) ?? "N/A")")
                     print("      - Level: \(userLevel) \(isSuper ? "(Superadmin)" : "")")
                     print("      - Menu Access: \(menuCount) items")
                     if let aksesMenu = session.userData.aksesMenu, !aksesMenu.isEmpty {
