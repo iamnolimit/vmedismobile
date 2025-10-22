@@ -39,6 +39,54 @@ struct UserData: Codable {
     
     /// Menyimpan header menu (dari MenuGroupUser.Items)
     var aksesMenuHead: [String]?  // Array of mn_nama header
+    
+    // MARK: - Custom Decoder
+    // Custom decoder untuk handle `id` yang bisa Int atau String dari API
+    enum CodingKeys: String, CodingKey {
+        case id, username, password, token, gr_id, app_id, status, keterangan, logo, lvl, domain
+        case nama_lengkap, kl_id, app_jenis, dokid, kl_nama, kl_logo, kl_lat, kl_lng
+        case countdown, langganan, created_at, wizard, app_reg, aksesMenu, aksesMenuHead
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle `id` - bisa Int atau String dari API, kita konversi ke String
+        if let idInt = try? container.decode(Int.self, forKey: .id) {
+            self.id = String(idInt)
+        } else if let idString = try? container.decode(String.self, forKey: .id) {
+            self.id = idString
+        } else {
+            self.id = nil
+        }
+        
+        // Decode semua field lain secara normal
+        self.username = try? container.decode(String.self, forKey: .username)
+        self.password = try? container.decode(String.self, forKey: .password)
+        self.token = try? container.decode(String.self, forKey: .token)
+        self.gr_id = try? container.decode(Int.self, forKey: .gr_id)
+        self.app_id = try? container.decode(String.self, forKey: .app_id)
+        self.status = try? container.decode(Int.self, forKey: .status)
+        self.keterangan = try? container.decode(String.self, forKey: .keterangan)
+        self.logo = try? container.decode(String.self, forKey: .logo)
+        self.lvl = try? container.decode(Int.self, forKey: .lvl)
+        self.domain = try? container.decode(String.self, forKey: .domain)
+        self.nama_lengkap = try? container.decode(String.self, forKey: .nama_lengkap)
+        self.kl_id = try? container.decode(Int.self, forKey: .kl_id)
+        self.app_jenis = try? container.decode(Int.self, forKey: .app_jenis)
+        self.dokid = try? container.decode(Int.self, forKey: .dokid)
+        self.kl_nama = try? container.decode(String.self, forKey: .kl_nama)
+        self.kl_logo = try? container.decode(String.self, forKey: .kl_logo)
+        self.kl_lat = try? container.decode(String.self, forKey: .kl_lat)
+        self.kl_lng = try? container.decode(String.self, forKey: .kl_lng)
+        self.countdown = try? container.decode(String.self, forKey: .countdown)
+        self.langganan = try? container.decode(String.self, forKey: .langganan)
+        self.created_at = try? container.decode(Int.self, forKey: .created_at)
+        self.wizard = try? container.decode(Int.self, forKey: .wizard)
+        self.app_reg = try? container.decode(String.self, forKey: .app_reg)
+        self.aksesMenu = try? container.decode([String].self, forKey: .aksesMenu)
+        self.aksesMenuHead = try? container.decode([String].self, forKey: .aksesMenuHead)
+    }
 }
 
 struct DomainValidationResponse: Codable {
