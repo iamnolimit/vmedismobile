@@ -18,8 +18,7 @@ class SessionManager: ObservableObject {
         loadSessions()
     }
     
-    // MARK: - Session Management
-      /// Tambah session baru atau update jika sudah ada
+    // MARK: - Session Management    /// Tambah session baru atau update jika sudah ada
     func addOrUpdateSession(userData: UserData) {
         // Deactivate all sessions first
         for i in 0..<sessions.count {
@@ -31,15 +30,16 @@ class SessionManager: ObservableObject {
             $0.userData.username == userData.username && 
             $0.userData.domain == userData.domain 
         }) {
-            // Update existing session
+            // Update existing session WITH NEW USERDATA (termasuk menu access!)
             var updatedSession = sessions[existingIndex]
+            updatedSession.userData = userData  // ← UPDATE USERDATA!
             updatedSession.updateAccessTime()
             updatedSession.isActive = true
             sessions[existingIndex] = updatedSession
             
             // Set as active
             setActiveSession(updatedSession)
-            print("✅ Updated existing session for \(userData.username ?? "")")
+            print("✅ Updated existing session for \(userData.username ?? "") with fresh userData")
         } else {
             // Check limit
             if sessions.count >= maxSessions {
@@ -58,10 +58,11 @@ class SessionManager: ObservableObject {
             setActiveSession(newSession)
             print("✅ Added new session for \(userData.username ?? "")")
         }
-        
-        print("📊 Total sessions: \(sessions.count)")
+          print("📊 Total sessions: \(sessions.count)")
         for (index, session) in sessions.enumerated() {
-            print("   \(index + 1). \(session.displayName) - Active: \(session.isActive)")
+            let menuCount = session.userData.aksesMenu?.count ?? 0
+            let isSuper = session.userData.lvl == 1
+            print("   \(index + 1). \(session.displayName) - Active: \(session.isActive) - Menu: \(menuCount) items - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
         }
         
         saveSessions()

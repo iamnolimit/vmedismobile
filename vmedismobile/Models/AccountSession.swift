@@ -4,7 +4,7 @@ import Foundation
 /// Model untuk menyimpan data session akun
 struct AccountSession: Codable, Identifiable {
     let id: String  // Unique identifier untuk session
-    let userData: UserData
+    var userData: UserData  // ← Changed to var untuk bisa update menu access
     let loginTime: Date
     var lastAccessTime: Date
     var isActive: Bool  // Menandakan session yang sedang aktif
