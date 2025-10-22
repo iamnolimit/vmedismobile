@@ -824,118 +824,214 @@ struct AccountManagementSection: View {
     @State private var showingAddAccountSheet = false
     @State private var showingDeleteAlert = false
     @State private var sessionToDelete: AccountSession?
-    @State private var showingSwitchAccountDropdown = false
+    @State private var showingAccountDropdown = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Kelola Akun")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main Dropdown Button
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    showingAccountDropdown.toggle()
+                }
+            }) {
+                HStack(spacing: 12) {
+                    // Avatar
+                    if let activeSession = sessionManager.activeSession {
+                        AsyncImage(url: getPhotoURL(for: activeSession)) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            case .failure:
+                                Circle()
+                                    .fill(Color.blue.opacity(0.2))
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.blue)
+                                    )
+                            case .empty:
+                                Circle()
+                                    .fill(Color.blue.opacity(0.2))
+                                    .overlay(
+                                        ProgressView()
+                                            .scaleEffect(0.7)
+                                    )
+                            @unknown default:
+                                Circle()
+                                    .fill(Color.blue.opacity(0.2))
+                                    .overlay(
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.blue)
+                                    )
+                            }
+                        }
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                        
+                        // Info
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(activeSession.displayName)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Text(activeSession.domainInfo)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    } else {
+                        Text("Tidak ada akun tersimpan")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                     
-                    Text("\(sessionManager.sessions.count)/\(5) akun tersimpan")
-                        .font(.caption)
+                    Spacer()
+                    
+                    // Chevron
+                    Image(systemName: showingAccountDropdown ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12))
                         .foregroundColor(.gray)
                 }
-                
-                Spacer()
-                
-                // Add Account Button
-                Button(action: {
-                    showingAddAccountSheet = true
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Tambah")
-                    }
-                    .font(.subheadline)
-                    .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        sessionManager.canAddMoreSessions() ? 
-                            Color.blue.opacity(0.1) : Color.gray.opacity(0.1)
-                    )
-                    .cornerRadius(8)
-                }
-                .disabled(!sessionManager.canAddMoreSessions())
+                .padding(12)
+                .background(Color.blue.opacity(0.05))
+                .cornerRadius(10)
             }
             
-            // Account List
-            if sessionManager.sessions.isEmpty {
-                Text("Tidak ada akun tersimpan")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                VStack(spacing: 8) {
-                    // Current Active Account
-                    if let activeSession = sessionManager.activeSession {
-                        AccountSessionRow(
-                            session: activeSession,
-                            isActive: true,
-                            onSwitch: {},
-                            onDelete: {
-                                sessionToDelete = activeSession
-                                showingDeleteAlert = true
-                            }
-                        )
-                    }
-                    
-                    // Switch Account Dropdown
-                    if sessionManager.sessions.count > 1 {
+            // Dropdown List
+            if showingAccountDropdown {
+                VStack(spacing: 0) {
+                    // All Sessions (including active)
+                    ForEach(sessionManager.sessions) { session in
                         Button(action: {
-                            withAnimation(.spring(response: 0.3)) {
-                                showingSwitchAccountDropdown.toggle()
+                            if !session.isActive {
+                                withAnimation {
+                                    showingAccountDropdown = false
+                                }
+                                appState.switchAccount(to: session)
                             }
                         }) {
-                            HStack {
-                                Image(systemName: "arrow.left.arrow.right.circle")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.blue)
+                            HStack(spacing: 12) {
+                                // Avatar
+                                AsyncImage(url: getPhotoURL(for: session)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    case .failure:
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.gray)
+                                            )
+                                    case .empty:
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .overlay(
+                                                ProgressView()
+                                                    .scaleEffect(0.6)
+                                            )
+                                    @unknown default:
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.gray)
+                                            )
+                                    }
+                                }
+                                .frame(width: 36, height: 36)
+                                .clipShape(Circle())
                                 
-                                Text("Ganti Akun")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
+                                // Info
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(session.displayName)
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                    
+                                    Text(session.domainInfo)
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
                                 
                                 Spacer()
                                 
-                                Image(systemName: showingSwitchAccountDropdown ? "chevron.up" : "chevron.down")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(12)
-                            .background(Color.blue.opacity(0.05))
-                            .cornerRadius(10)
-                        }
-                        
-                        // Dropdown List
-                        if showingSwitchAccountDropdown {
-                            VStack(spacing: 8) {
-                                ForEach(sessionManager.sessions.filter { !$0.isActive }) { session in
-                                    AccountSwitchRow(
-                                        session: session,
-                                        onSwitch: {
-                                            withAnimation {
-                                                showingSwitchAccountDropdown = false
-                                            }
-                                            appState.switchAccount(to: session)
-                                        },
-                                        onDelete: {
-                                            sessionToDelete = session
-                                            showingDeleteAlert = true
-                                        }
-                                    )
+                                // Active Label or Delete Button
+                                if session.isActive {
+                                    Text("Aktif")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.green)
+                                        .cornerRadius(4)
+                                } else {
+                                    Button(action: {
+                                        sessionToDelete = session
+                                        showingDeleteAlert = true
+                                    }) {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.red)
+                                            .padding(6)
+                                    }
                                 }
                             }
-                            .padding(.leading, 8)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            .padding(10)
+                            .background(session.isActive ? Color.blue.opacity(0.08) : Color.white)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(session.isActive)
+                        
+                        if session.id != sessionManager.sessions.last?.id {
+                            Divider()
+                                .padding(.leading, 58)
                         }
                     }
+                    
+                    // Add Account Button
+                    Divider()
+                    
+                    Button(action: {
+                        showingAccountDropdown = false
+                        showingAddAccountSheet = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
+                            
+                            Text("Tambah Akun Baru")
+                                .font(.subheadline)
+                                .foregroundColor(sessionManager.canAddMoreSessions() ? .blue : .gray)
+                            
+                            Spacer()
+                            
+                            if !sessionManager.canAddMoreSessions() {
+                                Text("\(sessionManager.sessions.count)/5")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(12)
+                        .background(Color.gray.opacity(0.03))
+                        .contentShape(Rectangle())
+                    }
+                    .disabled(!sessionManager.canAddMoreSessions())
                 }
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .padding(.top, 4)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding()
@@ -958,192 +1054,8 @@ struct AccountManagementSection: View {
             )
         }
     }
-}
-
-// MARK: - Account Session Row
-struct AccountSessionRow: View {
-    let session: AccountSession
-    let isActive: Bool
-    let onSwitch: () -> Void
-    let onDelete: () -> Void
     
-    var body: some View {
-        HStack(spacing: 12) {            // Avatar
-            AsyncImage(url: getPhotoURL()) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .failure:
-                    Circle()
-                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(isActive ? .blue : .gray)
-                        )
-                case .empty:
-                    Circle()
-                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
-                        .overlay(
-                            ProgressView()
-                                .scaleEffect(0.7)
-                        )
-                @unknown default:
-                    Circle()
-                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(isActive ? .blue : .gray)
-                        )
-                }
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(isActive ? Color.blue : Color.clear, lineWidth: 2)
-            )
-            
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(session.displayName)
-                        .font(.subheadline)
-                        .fontWeight(isActive ? .semibold : .regular)
-                        .foregroundColor(.primary)
-                    
-                    if isActive {
-                        Text("Aktif")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.green)
-                            .cornerRadius(4)
-                    }
-                }
-                
-                Text(session.domainInfo)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            // Delete Button (only show for active account)
-            if isActive {
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14))
-                        .foregroundColor(.red)
-                        .padding(6)
-                }
-            }
-        }
-        .padding(12)
-        .background(isActive ? Color.blue.opacity(0.05) : Color.gray.opacity(0.03))
-        .cornerRadius(10)
-    }
-    
-    private func getPhotoURL() -> URL? {
-        let baseImageURL = "https://apt.vmedis.com/foto/"
-        
-        if let userLogo = session.userData.logo, !userLogo.isEmpty {
-            return URL(string: baseImageURL + userLogo)
-        }
-        
-        let appJenis = session.userData.app_jenis ?? 1
-        if appJenis == 2 {
-            if let aptLogo = session.userData.kl_logo, !aptLogo.isEmpty {
-                return URL(string: baseImageURL + aptLogo)
-            }
-        } else {
-            if let klLogo = session.userData.kl_logo, !klLogo.isEmpty {
-                return URL(string: baseImageURL + klLogo)
-            }
-        }
-        
-        return nil
-    }
-}
-
-// MARK: - Account Switch Row (untuk dropdown)
-struct AccountSwitchRow: View {
-    let session: AccountSession
-    let onSwitch: () -> Void
-    let onDelete: () -> Void
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Avatar
-            AsyncImage(url: getPhotoURL()) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .failure:
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        )
-                case .empty:
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            ProgressView()
-                                .scaleEffect(0.6)
-                        )
-                @unknown default:
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        )
-                }
-            }
-            .frame(width: 36, height: 36)
-            .clipShape(Circle())
-            
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(session.displayName)
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
-                
-                Text(session.domainInfo)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            // Delete Button
-            Button(action: onDelete) {
-                Image(systemName: "trash")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
-                    .padding(6)
-            }
-        }
-        .padding(10)
-        .background(Color.gray.opacity(0.03))
-        .cornerRadius(8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onSwitch()
-        }
-    }
-    
-    private func getPhotoURL() -> URL? {
+    private func getPhotoURL(for session: AccountSession) -> URL? {
         let baseImageURL = "https://apt.vmedis.com/foto/"
         
         if let userLogo = session.userData.logo, !userLogo.isEmpty {

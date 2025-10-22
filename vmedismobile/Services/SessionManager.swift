@@ -19,9 +19,13 @@ class SessionManager: ObservableObject {
     }
     
     // MARK: - Session Management
-    
-    /// Tambah session baru atau update jika sudah ada
+      /// Tambah session baru atau update jika sudah ada
     func addOrUpdateSession(userData: UserData) {
+        // Deactivate all sessions first
+        for i in 0..<sessions.count {
+            sessions[i].isActive = false
+        }
+        
         // Check jika user sudah punya session
         if let existingIndex = sessions.firstIndex(where: { 
             $0.userData.username == userData.username && 
@@ -53,6 +57,11 @@ class SessionManager: ObservableObject {
             sessions.append(newSession)
             setActiveSession(newSession)
             print("✅ Added new session for \(userData.username ?? "")")
+        }
+        
+        print("📊 Total sessions: \(sessions.count)")
+        for (index, session) in sessions.enumerated() {
+            print("   \(index + 1). \(session.displayName) - Active: \(session.isActive)")
         }
         
         saveSessions()
