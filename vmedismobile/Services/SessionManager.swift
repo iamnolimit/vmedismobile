@@ -65,14 +65,14 @@ class SessionManager: ObservableObject {
         
         saveSessions()
     }
-    
-    /// Switch ke session lain
+      /// Switch ke session lain
     func switchSession(_ session: AccountSession) {
+        let userLevel = session.userData.lvl ?? 999
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔄 SWITCHING SESSION")
         print("   Target user: \(session.userData.username ?? "unknown")")
         print("   Target ID: \(session.userData.id ?? "N/A")")
-        print("   Target level: \(String(describing: session.userData.lvl ?? 999))")
+        print("   Target level: \(userLevel)")
         print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
         if let aksesMenu = session.userData.aksesMenu {
             print("   Menu URLs: \(aksesMenu)")
@@ -158,14 +158,14 @@ class SessionManager: ObservableObject {
             do {
                 sessions = try JSONDecoder().decode([AccountSession].self, from: data)
                 print("✅ Loaded \(sessions.count) sessions from persistence")
-                
-                // Debug: Print menu access untuk setiap session
+                  // Debug: Print menu access untuk setiap session
                 for (index, session) in sessions.enumerated() {
                     let menuCount = session.userData.aksesMenu?.count ?? 0
                     let isSuper = session.userData.lvl == 1
+                    let userLevel = session.userData.lvl ?? 0
                     print("   \(index + 1). \(session.displayName)")
                     print("      - ID: \(session.userData.id ?? "N/A")")
-                    print("      - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+                    print("      - Level: \(userLevel) \(isSuper ? "(Superadmin)" : "")")
                     print("      - Menu Access: \(menuCount) items")
                     if let aksesMenu = session.userData.aksesMenu, !aksesMenu.isEmpty {
                         print("      - URLs: \(aksesMenu)")

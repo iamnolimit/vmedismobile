@@ -84,13 +84,13 @@ class AppState: ObservableObject {
             self.userData = session.userData
             self.isLoggedIn = true
             saveLoginState()
-            
-            // Log detail userData yang baru
+              // Log detail userData yang baru
             let menuCount = session.userData.aksesMenu?.count ?? 0
             let isSuper = session.userData.lvl == 1
+            let userLevel = session.userData.lvl ?? 0
             print("✅ Switched to: \(session.userData.username ?? "unknown")")
             print("   - ID: \(session.userData.id ?? "N/A")")
-            print("   - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+            print("   - Level: \(userLevel) \(isSuper ? "(Superadmin)" : "")")
             print("   - Menu Access: \(menuCount) items in userData.aksesMenu")
             if let aksesMenu = session.userData.aksesMenu {
                 print("   - Menu URLs: \(aksesMenu)")
