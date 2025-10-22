@@ -71,7 +71,8 @@ class AppState: ObservableObject {
             self.isLoggedIn = false
             clearLoginState()
         }
-    }      func switchAccount(to session: AccountSession) {
+    }      
+    func switchAccount(to session: AccountSession) {
         Task { @MainActor in
             print("🔄 Switching account from \(self.userData?.username ?? "none") to \(session.userData.username ?? "unknown")")
             
