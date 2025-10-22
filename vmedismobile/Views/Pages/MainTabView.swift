@@ -11,10 +11,11 @@ struct MainTabView: View {
     @State private var accessibleTabs: [String] = []
     @State private var isCheckingAccess = true
     
-    // Computed property to get current userData
+    // Computed property to get current userData (always non-nil since we only show MainTabView when logged in)
     private var userData: UserData {
-        return appState.userData ?? UserData(username: "unknown")
+        return appState.userData!
     }
+    
     var body: some View {
         if isCheckingAccess {
             // Loading state saat check access
