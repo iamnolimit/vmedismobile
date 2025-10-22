@@ -919,15 +919,30 @@ struct AccountSessionRow: View {
     let onDelete: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Avatar
+        HStack(spacing: 12) {            // Avatar
             AsyncImage(url: getPhotoURL()) { phase in
                 switch phase {
                 case .success(let image):
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                case .failure, .empty, @unknown _:
+                case .failure:
+                    Circle()
+                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(isActive ? .blue : .gray)
+                        )
+                case .empty:
+                    Circle()
+                        .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(isActive ? .blue : .gray)
+                        )
+                @unknown default:
                     Circle()
                         .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
                         .overlay(
