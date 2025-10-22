@@ -62,10 +62,12 @@ struct MainTabView: View {
                         .tabItem {
                             Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
                             Text("Forecast")
-                        }
+                        }                        
                         .tag(3)
                 }
-                  // 5. Account Tab - always accessible                ProfileView(
+                
+                // 5. Account Tab - always accessible
+                ProfileView(
                     userData: userData,
                     navigationRoute: $navigationRoute,
                     shouldNavigate: $shouldNavigateToReport,
