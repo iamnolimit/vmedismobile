@@ -35,11 +35,14 @@ class AppState: ObservableObject {
             SessionManager.shared.addOrUpdateSession(userData: userData)
         }
     }
-    
-    func logout() {
+      func logout() {
         // Only logout current session, keep other sessions
         if let currentUserData = self.userData {
             Task { @MainActor in
+                // Clear menu access data
+                MenuAccessManager.shared.clearMenuData()
+                print("🔄 Logging out - menu data cleared")
+                
                 // Find and remove current session
                 if let session = SessionManager.shared.sessions.first(where: { 
                     $0.userData.username == currentUserData.username && 
@@ -54,11 +57,13 @@ class AppState: ObservableObject {
                     self.userData = nextSession.userData
                     self.isLoggedIn = true
                     saveLoginState()
+                    print("✅ Switched to next available session")
                 } else {
                     // No more sessions, full logout
                     self.userData = nil
                     self.isLoggedIn = false
                     clearLoginState()
+                    print("✅ Full logout - no sessions remaining")
                 }
             }
         } else {
@@ -67,13 +72,19 @@ class AppState: ObservableObject {
             clearLoginState()
         }
     }
-    
-    func switchAccount(to session: AccountSession) {
+      func switchAccount(to session: AccountSession) {
         Task { @MainActor in
+            // Clear menu access data dari akun sebelumnya
+            MenuAccessManager.shared.clearMenuData()
+            print("🔄 Switching account - menu data cleared")
+            
+            // Switch session
             SessionManager.shared.switchSession(session)
             self.userData = session.userData
             self.isLoggedIn = true
             saveLoginState()
+            
+            print("✅ Switched to account: \(session.userData.username ?? "unknown")")
         }
     }
     

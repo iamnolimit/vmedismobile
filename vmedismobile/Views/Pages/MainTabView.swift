@@ -84,12 +84,16 @@ struct MainTabView: View {
                     Text("Akun")
                 }
                 .tag(4)
-            }
-            .accentColor(.blue)
+            }            .accentColor(.blue)
             .preferredColorScheme(.light)
             .onAppear {
                 setupTabBarAppearance()
                 setupStatsNavigationListener()
+            }
+            .onChange(of: userData.id) { _ in
+                // Reload tab access when userData changes (account switch)
+                print("🔄 UserData changed in MainTabView - rechecking tab access")
+                checkTabAccess()
             }
         }
     }
@@ -485,13 +489,18 @@ struct ProfileView: View {
                 .opacity(0)            }
             .navigationTitle("Akun")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
+        }        .navigationViewStyle(StackNavigationViewStyle()) // Force single column on iPad
         .preferredColorScheme(.light) // Force light mode
         .onAppear {
             // Load menu access saat view muncul
             loadUserMenuAccess()
-        }.onChange(of: submenuToExpand) { newSubmenu in
+        }
+        .onChange(of: userData.id) { _ in
+            // Reload menu access when userData changes (account switch)
+            print("🔄 UserData changed - reloading menu access")
+            loadUserMenuAccess()
+        }
+        .onChange(of: submenuToExpand) { newSubmenu in
             if let submenu = newSubmenu {
                 print("📂 Expanding submenu: \(submenu)")
                 
