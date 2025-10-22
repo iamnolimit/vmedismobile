@@ -566,17 +566,10 @@ struct ProfileView: View {
         print("📊 Filtered menu: \(filtered.count) items from \(menuItems.count) total")
         return filtered
     }
-    
-    /// Load dan filter menu berdasarkan hak akses user
+      /// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
-        print("🔐 Loading user menu access...")
+        print("🔐 Loading user menu access for user: \(userData.username ?? "unknown")")
         isLoadingMenu = true
-        
-        // Load menu access dari MenuAccessManager
-        let menuAccess = MenuAccessManager.shared.getMenuAccess()
-        userMenuAccess = menuAccess
-        
-        print("📋 User has access to \(menuAccess.count) menu items")
         
         // Check user level - lvl=1 adalah superadmin dengan full akses
         let userLevel = userData.lvl ?? 999
@@ -585,12 +578,28 @@ struct ProfileView: View {
             // Superadmin - berikan full akses ke semua menu
             print("👑 Superadmin detected (lvl=\(userLevel)) - granting full access")
             filteredMenuItems = menuItems
-        } else if menuAccess.isEmpty {
-            // Tidak ada data menu access - JANGAN tampilkan menu (user tidak punya akses)
-            print("⚠️ No menu access data found - user has NO access to any menu")
-            filteredMenuItems = []
-        } else {
-            // User biasa - filter menu berdasarkan hak akses
+            isLoadingMenu = false
+            return
+        }
+        
+        // Load menu access dari userData (bukan dari UserDefaults!)
+        if let aksesMenu = userData.aksesMenu, !aksesMenu.isEmpty {
+            // Convert aksesMenu dari userData ke MenuAccess objects
+            let menuAccessItems = aksesMenu.map { mnUrl in
+                MenuAccess(mn_url: mnUrl, mn_kode: "", mn_nama: "")
+            }
+            
+            // Save ke MenuAccessManager untuk current session
+            MenuAccessManager.shared.saveMenuAccess(menuAccessItems)
+            print("💾 Saved menu access from userData: \(aksesMenu.count) items")
+            
+            // Load dari MenuAccessManager
+            let menuAccess = MenuAccessManager.shared.getMenuAccess()
+            userMenuAccess = menuAccess
+            
+            print("📋 User has access to \(menuAccess.count) menu items")
+            
+            // Filter menu berdasarkan hak akses
             print("👤 Regular user (lvl=\(userLevel)) - filtering menu based on access")
             filteredMenuItems = filterMenuItemsByAccess(menuItems)
             
@@ -603,6 +612,10 @@ struct ProfileView: View {
                     print("   📄 \(menu.title) - route: \(menu.route ?? "none")")
                 }
             }
+        } else {
+            // Tidak ada menu access di userData
+            print("⚠️ No menu access data in userData - user has NO access to any menu")
+            filteredMenuItems = []
         }
         
         isLoadingMenu = false

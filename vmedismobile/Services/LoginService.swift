@@ -381,21 +381,11 @@ class LoginService: ObservableObject {
                     }
                 }
             }
+              print("✅ Menu access parsed: \(aksesMenu.count) URLs, \(aksesMenuHead.count) headers")
             
-            print("✅ Menu access parsed: \(aksesMenu.count) URLs, \(aksesMenuHead.count) headers")
-            
-            // Simpan ke MenuAccessManager
-            let menuAccessItems = (menuResponse.data?.MenuGroupUser?.Items1 ?? []).compactMap { item -> MenuAccess? in
-                guard let mnUrl = item.mn_url else { return nil }
-                return MenuAccess(
-                    mn_url: mnUrl,
-                    mn_kode: item.mn_kode ?? "",
-                    mn_nama: item.mn_nama ?? ""
-                )
-            }
-            
-            MenuAccessManager.shared.saveMenuAccess(menuAccessItems)
-            print("💾 Menu access saved to local storage")
+            // JANGAN save ke MenuAccessManager di sini!
+            // Menu access akan di-save per-session oleh MainTabView saat load
+            // Ini penting untuk multi-session agar tidak overwrite menu akun lain
             
             return (aksesMenu, aksesMenuHead)
             
