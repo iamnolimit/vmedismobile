@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    let userData: UserData
+    @EnvironmentObject var appState: AppState
     @State private var selectedTab = 0
     @State private var previousTab: Int? = nil // Track previous tab for back navigation
     @State private var navigationRoute: String?
@@ -10,6 +10,11 @@ struct MainTabView: View {
     @State private var submenuToExpand: String?
     @State private var accessibleTabs: [String] = []
     @State private var isCheckingAccess = true
+    
+    // Computed property to get current userData
+    private var userData: UserData {
+        return appState.userData ?? UserData(username: "unknown")
+    }
     var body: some View {
         if isCheckingAccess {
             // Loading state saat check access
@@ -90,12 +95,15 @@ struct MainTabView: View {
                 setupStatsNavigationListener()
                 // Check tab access on appear
                 checkTabAccess()
-            }
-            .onChange(of: userData.id) { newId in
+            }            .onChange(of: userData.id) { newId in
                 // Reload tab access when userData changes (account switch)
-                print("🔄 UserData.id changed in MainTabView from previous to: \(newId ?? "N/A")")
-                print("   Current userData in MainTabView: ID=\(userData.id ?? "N/A"), Level=\(userData.lvl ?? 0)")
-                checkTabAccess()
+                print("🔄 UserData.id changed to: \(newId ?? "N/A")")
+                
+                // Use DispatchQueue to ensure userData is fully updated before checking access
+                DispatchQueue.main.async {
+                    print("   Verifying userData after async: ID=\(userData.id ?? "N/A"), Level=\(userData.lvl ?? 0)")
+                    checkTabAccess()
+                }
             }
         }
     }

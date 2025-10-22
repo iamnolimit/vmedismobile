@@ -2,12 +2,12 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var appState: AppState
-      var body: some View {
+    @EnvironmentObject var appState: AppState    var body: some View {
         Group {
-            if appState.isLoggedIn, let userData = appState.userData {
-                MainTabView(userData: userData)
-                    .id(userData.id) // Force complete re-render when userData changes (critical for account switching!)
+            if appState.isLoggedIn, appState.userData != nil {
+                MainTabView()
+                    .environmentObject(appState)
+                    .id(appState.userData?.id ?? "0") // Force complete re-render when userData changes
             } else if appState.showAccountPicker {
                 AccountPickerView()
             } else {
