@@ -13,7 +13,8 @@ struct BypassDebugView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                // User Data Summary                VStack(alignment: .leading, spacing: 8) {
+                // User Data Summary                
+            VStack(alignment: .leading, spacing: 8) {
                     Text("User Data:")
                         .font(.headline)
                     
