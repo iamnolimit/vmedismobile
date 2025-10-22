@@ -824,6 +824,7 @@ struct AccountManagementSection: View {
     @State private var showingAddAccountSheet = false
     @State private var showingDeleteAlert = false
     @State private var sessionToDelete: AccountSession?
+    @State private var showingSwitchAccountDropdown = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -871,20 +872,68 @@ struct AccountManagementSection: View {
                     .padding(.vertical, 20)
             } else {
                 VStack(spacing: 8) {
-                    ForEach(sessionManager.sessions) { session in
+                    // Current Active Account
+                    if let activeSession = sessionManager.activeSession {
                         AccountSessionRow(
-                            session: session,
-                            isActive: session.id == sessionManager.activeSession?.id,
-                            onSwitch: {
-                                if !session.isActive {
-                                    appState.switchAccount(to: session)
-                                }
-                            },
+                            session: activeSession,
+                            isActive: true,
+                            onSwitch: {},
                             onDelete: {
-                                sessionToDelete = session
+                                sessionToDelete = activeSession
                                 showingDeleteAlert = true
                             }
                         )
+                    }
+                    
+                    // Switch Account Dropdown
+                    if sessionManager.sessions.count > 1 {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3)) {
+                                showingSwitchAccountDropdown.toggle()
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.left.arrow.right.circle")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.blue)
+                                
+                                Text("Ganti Akun")
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                                
+                                Spacer()
+                                
+                                Image(systemName: showingSwitchAccountDropdown ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(12)
+                            .background(Color.blue.opacity(0.05))
+                            .cornerRadius(10)
+                        }
+                        
+                        // Dropdown List
+                        if showingSwitchAccountDropdown {
+                            VStack(spacing: 8) {
+                                ForEach(sessionManager.sessions.filter { !$0.isActive }) { session in
+                                    AccountSwitchRow(
+                                        session: session,
+                                        onSwitch: {
+                                            withAnimation {
+                                                showingSwitchAccountDropdown = false
+                                            }
+                                            appState.switchAccount(to: session)
+                                        },
+                                        onDelete: {
+                                            sessionToDelete = session
+                                            showingDeleteAlert = true
+                                        }
+                                    )
+                                }
+                            }
+                            .padding(.leading, 8)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                 }
             }
@@ -938,9 +987,8 @@ struct AccountSessionRow: View {
                     Circle()
                         .fill(isActive ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
                         .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(isActive ? .blue : .gray)
+                            ProgressView()
+                                .scaleEffect(0.7)
                         )
                 @unknown default:
                     Circle()
@@ -985,22 +1033,8 @@ struct AccountSessionRow: View {
             
             Spacer()
             
-            // Actions
-            HStack(spacing: 8) {
-                if !isActive {
-                    // Switch Button
-                    Button(action: onSwitch) {
-                        Text("Ganti")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(6)
-                    }
-                }
-                
-                // Delete Button
+            // Delete Button (only show for active account)
+            if isActive {
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.system(size: 14))
@@ -1012,6 +1046,101 @@ struct AccountSessionRow: View {
         .padding(12)
         .background(isActive ? Color.blue.opacity(0.05) : Color.gray.opacity(0.03))
         .cornerRadius(10)
+    }
+    
+    private func getPhotoURL() -> URL? {
+        let baseImageURL = "https://apt.vmedis.com/foto/"
+        
+        if let userLogo = session.userData.logo, !userLogo.isEmpty {
+            return URL(string: baseImageURL + userLogo)
+        }
+        
+        let appJenis = session.userData.app_jenis ?? 1
+        if appJenis == 2 {
+            if let aptLogo = session.userData.kl_logo, !aptLogo.isEmpty {
+                return URL(string: baseImageURL + aptLogo)
+            }
+        } else {
+            if let klLogo = session.userData.kl_logo, !klLogo.isEmpty {
+                return URL(string: baseImageURL + klLogo)
+            }
+        }
+        
+        return nil
+    }
+}
+
+// MARK: - Account Switch Row (untuk dropdown)
+struct AccountSwitchRow: View {
+    let session: AccountSession
+    let onSwitch: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Avatar
+            AsyncImage(url: getPhotoURL()) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                case .failure:
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        )
+                case .empty:
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .overlay(
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        )
+                @unknown default:
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        )
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+            
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.displayName)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                
+                Text(session.domainInfo)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Delete Button
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .font(.system(size: 13))
+                    .foregroundColor(.red)
+                    .padding(6)
+            }
+        }
+        .padding(10)
+        .background(Color.gray.opacity(0.03))
+        .cornerRadius(8)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSwitch()
+        }
     }
     
     private func getPhotoURL() -> URL? {
@@ -1054,7 +1183,7 @@ struct AddAccountSheet: View {
                     .fontWeight(.bold)
                     .padding(.top, 20)
                 
-                Text("Anda akan logout dari akun saat ini dan diarahkan ke halaman login untuk menambahkan akun baru.")
+                Text("Akun saat ini akan tetap tersimpan. Anda akan diarahkan ke halaman login untuk menambahkan akun baru.")
                     .font(.body)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -1065,9 +1194,12 @@ struct AddAccountSheet: View {
                 
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
-                    // Logout tanpa menghapus sessions yang lain
+                    // Logout tapi jangan hapus current session
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        appState.logout()
+                        // Set flag agar session tetap tersimpan
+                        appState.isLoggedIn = false
+                        appState.userData = nil
+                        // Don't call logout() karena itu akan remove session
                     }
                 }) {
                     Text("Lanjutkan ke Login")
