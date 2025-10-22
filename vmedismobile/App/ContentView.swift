@@ -3,11 +3,11 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
-    
-    var body: some View {
+      var body: some View {
         Group {
             if appState.isLoggedIn, let userData = appState.userData {
                 MainTabView(userData: userData)
+                    .id(userData.id) // Force complete re-render when userData changes (critical for account switching!)
             } else if appState.showAccountPicker {
                 AccountPickerView()
             } else {
