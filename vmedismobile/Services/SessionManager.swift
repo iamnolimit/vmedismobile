@@ -67,9 +67,19 @@ class SessionManager: ObservableObject {
         
         saveSessions()
     }
-    
-    /// Switch ke session lain
+      /// Switch ke session lain
     func switchSession(_ session: AccountSession) {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔄 SWITCHING SESSION")
+        print("   Target user: \(session.userData.username ?? "unknown")")
+        print("   Target ID: \(session.userData.id ?? "N/A")")
+        print("   Target level: \(session.userData.lvl ?? 999)")
+        print("   Target aksesMenu: \(session.userData.aksesMenu?.count ?? 0) items")
+        if let aksesMenu = session.userData.aksesMenu {
+            print("   Menu URLs: \(aksesMenu)")
+        }
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        
         // Deactivate all sessions
         for i in 0..<sessions.count {
             sessions[i].isActive = false
@@ -85,7 +95,8 @@ class SessionManager: ObservableObject {
             setActiveSession(updatedSession)
             saveSessions()
             
-            print("🔄 Switched to session: \(session.displayName)")
+            print("✅ Session switched successfully")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
         }
     }
     

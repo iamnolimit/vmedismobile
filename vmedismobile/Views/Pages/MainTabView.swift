@@ -69,8 +69,7 @@ struct MainTabView: View {
                         }
                         .tag(3)
                 }
-                
-                // 5. Account Tab - always accessible
+                  // 5. Account Tab - always accessible
                 ProfileView(
                     userData: userData,
                     navigationRoute: $navigationRoute,
@@ -79,6 +78,7 @@ struct MainTabView: View {
                     previousTab: $previousTab,
                     selectedTab: $selectedTab
                 )
+                .id(userData.id) // Force re-render when userData changes (critical for account switching!)
                 .tabItem {
                     Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
                     Text("Akun")
@@ -591,7 +591,15 @@ struct ProfileView: View {
         return accessibleUrls.contains(mnUrl)
     }/// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
-        print("🔐 Loading user menu access for user: \(userData.username ?? "unknown") (ID: \(userData.id ?? "N/A"))")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔐 LOADING MENU ACCESS FOR USER")
+        print("   Username: \(userData.username ?? "unknown")")
+        print("   User ID: \(userData.id ?? "N/A")")
+        print("   Level: \(userData.lvl ?? 999)")
+        print("   Domain: \(userData.domain ?? "N/A")")
+        print("   AksesMenu count: \(userData.aksesMenu?.count ?? 0)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        
         isLoadingMenu = true
         
         // Check user level - lvl=1 adalah superadmin dengan full akses
@@ -603,6 +611,7 @@ struct ProfileView: View {
             filteredMenuItems = menuItems
             userMenuAccess = [] // Superadmin tidak perlu menu access list
             isLoadingMenu = false
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             return
         }
         
@@ -630,8 +639,7 @@ struct ProfileView: View {
             for menu in filteredMenuItems {
                 if let subMenus = menu.subMenus {
                     print("   📂 \(menu.title) - \(subMenus.count) submenus")
-                } else {
-                    print("   📄 \(menu.title) - route: \(menu.route ?? "none")")
+                } else {                    print("   📄 \(menu.title) - route: \(menu.route ?? "none")")
                 }
             }
         } else {
@@ -642,6 +650,7 @@ struct ProfileView: View {
         }
         
         isLoadingMenu = false
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     }
     
     /// Construct URL foto profil user berdasarkan data yang tersedia
