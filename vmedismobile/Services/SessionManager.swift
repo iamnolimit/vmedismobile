@@ -141,13 +141,25 @@ class SessionManager: ObservableObject {
             print("❌ Failed to save sessions: \(error)")
         }
     }
-    
-    private func loadSessions() {
+      private func loadSessions() {
         // Load sessions
         if let data = UserDefaults.standard.data(forKey: sessionsKey) {
             do {
                 sessions = try JSONDecoder().decode([AccountSession].self, from: data)
-                print("✅ Loaded \(sessions.count) sessions")
+                print("✅ Loaded \(sessions.count) sessions from persistence")
+                
+                // Debug: Print menu access untuk setiap session
+                for (index, session) in sessions.enumerated() {
+                    let menuCount = session.userData.aksesMenu?.count ?? 0
+                    let isSuper = session.userData.lvl == 1
+                    print("   \(index + 1). \(session.displayName)")
+                    print("      - ID: \(session.userData.id ?? "N/A")")
+                    print("      - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+                    print("      - Menu Access: \(menuCount) items")
+                    if let aksesMenu = session.userData.aksesMenu, !aksesMenu.isEmpty {
+                        print("      - URLs: \(aksesMenu)")
+                    }
+                }
                 
                 // Load active session
                 if let activeId = UserDefaults.standard.string(forKey: activeSessionKey),

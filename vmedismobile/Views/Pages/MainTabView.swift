@@ -162,10 +162,9 @@ struct MainTabView: View {
     }
     
     // MARK: - Tab Access Control
-    
-    /// Check akses user ke setiap tab
+      /// Check akses user ke setiap tab
     private func checkTabAccess() {
-        print("🔐 Checking tab access for user...")
+        print("🔐 Checking tab access for user (ID: \(userData.id ?? "N/A"))...")
         
         let userLevel = userData.lvl ?? 999
         
@@ -177,20 +176,31 @@ struct MainTabView: View {
             return
         }
         
-        // Load menu access dari MenuAccessManager
-        let menuAccess = MenuAccessManager.shared.getMenuAccess()
-        
-        // Jika tidak ada menu access data
-        if menuAccess.isEmpty {
-            print("⚠️ No menu access data - granting default tabs")
+        // Load menu access LANGSUNG dari userData (bukan dari UserDefaults!)
+        guard let aksesMenu = userData.aksesMenu, !aksesMenu.isEmpty else {
+            print("⚠️ No menu access in userData - granting only account tab")
             // Default: hanya tab Akun yang accessible
             accessibleTabs = ["account"]
             isCheckingAccess = false
             return
         }
         
-        // Regular user - check akses per tab
-        accessibleTabs = MenuAccessManager.shared.getAccessibleTabs()
+        print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")
+        
+        // Regular user - check akses per tab berdasarkan aksesMenu dari userData
+        let allTabs = ["home", "products", "orders", "forecast", "account"]
+        accessibleTabs = allTabs.filter { tabName in
+            // Tab Akun selalu accessible
+            if tabName == "account" {
+                return true
+            }
+            
+            // Check apakah tab accessible
+            if let mnUrl = MenuURLMapping.getURL(for: tabName) {
+                return aksesMenu.contains(mnUrl)
+            }
+            return false
+        }
         
         print("✅ Accessible tabs for user: \(accessibleTabs)")
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
@@ -531,23 +541,26 @@ struct ProfileView: View {
                 // This prevents the page from closing immediately
             }
         }
-    }
-    // MARK: - Helper Functions
+    }    // MARK: - Helper Functions
     /// Filter menu items berdasarkan hak akses user
     private func filterMenuItemsByAccess(_ menuItems: [MenuItem]) -> [MenuItem] {
         var filtered: [MenuItem] = []
         
+        // Extract accessible URLs from userMenuAccess
+        let accessibleUrls = Set(userMenuAccess.map { $0.mn_url })
+        print("🔍 Filtering with \(accessibleUrls.count) accessible URLs from userMenuAccess")
+        
         for menu in menuItems {
             // Menu tanpa submenu
             if let route = menu.route, menu.subMenus == nil {
-                if MenuAccessManager.shared.hasAccess(to: route) {
+                if hasLocalAccess(to: route, accessibleUrls: accessibleUrls) {
                     filtered.append(menu)
                 }
             }
             // Menu dengan submenu
             else if let subMenus = menu.subMenus {
                 // Filter submenu berdasarkan akses
-                let filteredSubs = subMenus.filter { MenuAccessManager.shared.hasAccess(to: $0.route) }
+                let filteredSubs = subMenus.filter { hasLocalAccess(to: $0.route, accessibleUrls: accessibleUrls) }
                 
                 // Hanya tampilkan parent jika ada submenu yang accessible
                 if !filteredSubs.isEmpty {
@@ -566,9 +579,19 @@ struct ProfileView: View {
         print("📊 Filtered menu: \(filtered.count) items from \(menuItems.count) total")
         return filtered
     }
-      /// Load dan filter menu berdasarkan hak akses user
+    
+    /// Check access LOKAL dari userMenuAccess (tidak dari UserDefaults)
+    private func hasLocalAccess(to route: String, accessibleUrls: Set<String>) -> Bool {
+        // Map route ke mn_url
+        guard let mnUrl = MenuURLMapping.getURL(for: route) else {
+            return false
+        }
+        
+        // Check apakah mn_url ada di accessible URLs
+        return accessibleUrls.contains(mnUrl)
+    }/// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
-        print("🔐 Loading user menu access for user: \(userData.username ?? "unknown")")
+        print("🔐 Loading user menu access for user: \(userData.username ?? "unknown") (ID: \(userData.id ?? "N/A"))")
         isLoadingMenu = true
         
         // Check user level - lvl=1 adalah superadmin dengan full akses
@@ -576,31 +599,30 @@ struct ProfileView: View {
         
         if userLevel == 1 {
             // Superadmin - berikan full akses ke semua menu
-            print("👑 Superadmin detected (lvl=\(userLevel)) - granting full access")
+            print("👑 Superadmin detected (lvl=\(userLevel)) - granting full access to ALL \(menuItems.count) menu items")
             filteredMenuItems = menuItems
+            userMenuAccess = [] // Superadmin tidak perlu menu access list
             isLoadingMenu = false
             return
         }
         
-        // Load menu access dari userData (bukan dari UserDefaults!)
+        // Load menu access LANGSUNG dari userData (TIDAK melalui UserDefaults!)
         if let aksesMenu = userData.aksesMenu, !aksesMenu.isEmpty {
             // Convert aksesMenu dari userData ke MenuAccess objects
             let menuAccessItems = aksesMenu.map { mnUrl in
                 MenuAccess(mn_url: mnUrl, mn_kode: "", mn_nama: "")
             }
             
-            // Save ke MenuAccessManager untuk current session
-            MenuAccessManager.shared.saveMenuAccess(menuAccessItems)
-            print("💾 Saved menu access from userData: \(aksesMenu.count) items")
+            // LANGSUNG gunakan data dari userData, TIDAK save ke UserDefaults
+            userMenuAccess = menuAccessItems
             
-            // Load dari MenuAccessManager
-            let menuAccess = MenuAccessManager.shared.getMenuAccess()
-            userMenuAccess = menuAccess
-            
-            print("📋 User has access to \(menuAccess.count) menu items")
+            print("📋 User (lvl=\(userLevel)) has access to \(aksesMenu.count) menu URLs from userData.aksesMenu:")
+            for (index, url) in aksesMenu.enumerated() {
+                print("   \(index + 1). \(url)")
+            }
             
             // Filter menu berdasarkan hak akses
-            print("👤 Regular user (lvl=\(userLevel)) - filtering menu based on access")
+            print("🔍 Filtering menu based on access...")
             filteredMenuItems = filterMenuItemsByAccess(menuItems)
             
             // Log hasil filtering
@@ -616,6 +638,7 @@ struct ProfileView: View {
             // Tidak ada menu access di userData
             print("⚠️ No menu access data in userData - user has NO access to any menu")
             filteredMenuItems = []
+            userMenuAccess = []
         }
         
         isLoadingMenu = false

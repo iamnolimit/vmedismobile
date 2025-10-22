@@ -71,12 +71,12 @@ class AppState: ObservableObject {
             self.isLoggedIn = false
             clearLoginState()
         }
-    }
-      func switchAccount(to session: AccountSession) {
+    }      func switchAccount(to session: AccountSession) {
         Task { @MainActor in
-            // Clear menu access data dari akun sebelumnya
+            print("🔄 Switching account from \(self.userData?.username ?? "none") to \(session.userData.username ?? "unknown")")
+            
+            // Clear menu access data dari akun sebelumnya (legacy, sekarang tidak perlu karena menu di-load dari userData)
             MenuAccessManager.shared.clearMenuData()
-            print("🔄 Switching account - menu data cleared")
             
             // Switch session
             SessionManager.shared.switchSession(session)
@@ -84,7 +84,16 @@ class AppState: ObservableObject {
             self.isLoggedIn = true
             saveLoginState()
             
-            print("✅ Switched to account: \(session.userData.username ?? "unknown")")
+            // Log detail userData yang baru
+            let menuCount = session.userData.aksesMenu?.count ?? 0
+            let isSuper = session.userData.lvl == 1
+            print("✅ Switched to: \(session.userData.username ?? "unknown")")
+            print("   - ID: \(session.userData.id ?? "N/A")")
+            print("   - Level: \(session.userData.lvl ?? 0) \(isSuper ? "(Superadmin)" : "")")
+            print("   - Menu Access: \(menuCount) items in userData.aksesMenu")
+            if let aksesMenu = session.userData.aksesMenu {
+                print("   - Menu URLs: \(aksesMenu)")
+            }
         }
     }
     

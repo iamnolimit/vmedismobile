@@ -112,6 +112,91 @@ withAnimation(.spring(response: 0.3)) {
 
 ---
 
+## 🔥 Critical Fix: Menu Access Isolation Per Session (October 22, 2025)
+
+### Problem: Menu Access Swap Between Accounts ❌
+
+**Symptom:**
+
+- Login akun A (Superadmin, full access)
+- Tambah akun B (Regular user, limited menu)
+- Switch A → B: Correct ✅
+- Switch B → A: **Mendapat menu B instead of full access** ❌
+
+**Root Cause:**
+`MainTabView.loadUserMenuAccess()` menyimpan menu ke **global UserDefaults** via `MenuAccessManager`, causing cross-contamination between sessions.
+
+### Solution: Session-Scoped Menu Access ✅
+
+**Approach:** Hapus dependency ke UserDefaults. Menu access dibaca langsung dari `userData.aksesMenu` yang sudah di-persist per session.
+
+#### Files Modified:
+
+**1. MainTabView.swift - loadUserMenuAccess()**
+
+```swift
+// BEFORE: Save to global UserDefaults ❌
+MenuAccessManager.shared.saveMenuAccess(menuAccessItems)
+let menuAccess = MenuAccessManager.shared.getMenuAccess()
+
+// AFTER: Use local data directly ✅
+userMenuAccess = menuAccessItems
+// Read directly from userData.aksesMenu
+```
+
+**2. MainTabView.swift - filterMenuItemsByAccess()**
+
+```swift
+// BEFORE: Read from global storage ❌
+if MenuAccessManager.shared.hasAccess(to: route) { ... }
+
+// AFTER: Use local userMenuAccess ✅
+let accessibleUrls = Set(userMenuAccess.map { $0.mn_url })
+private func hasLocalAccess(to route: String, accessibleUrls: Set<String>) -> Bool {
+    guard let mnUrl = MenuURLMapping.getURL(for: route) else { return false }
+    return accessibleUrls.contains(mnUrl)
+}
+```
+
+**3. MainTabView.swift - checkTabAccess()**
+
+```swift
+// BEFORE: Read from MenuAccessManager ❌
+let menuAccess = MenuAccessManager.shared.getMenuAccess()
+accessibleTabs = MenuAccessManager.shared.getAccessibleTabs()
+
+// AFTER: Read from userData.aksesMenu ✅
+guard let aksesMenu = userData.aksesMenu, !aksesMenu.isEmpty else { ... }
+accessibleTabs = allTabs.filter { tabName in
+    if let mnUrl = MenuURLMapping.getURL(for: tabName) {
+        return aksesMenu.contains(mnUrl)
+    }
+    return false
+}
+```
+
+**4. AppState.swift - switchAccount()**
+
+- Enhanced logging untuk debugging menu access
+
+**5. SessionManager.swift - loadSessions()**
+
+- Enhanced logging untuk verify persistence
+
+### Impact:
+
+- ✅ **Menu access sekarang isolated per session**
+- ✅ **No cross-contamination between accounts**
+- ✅ **Single source of truth: userData.aksesMenu**
+- ✅ **Superadmin tetap dapat full access setelah switch**
+- ✅ **Regular user tetap dapat limited access setelah switch**
+
+### Documentation:
+
+- Created: `FIX_MENU_ACCESS_ISOLATION.md` - Complete technical details
+
+---
+
 ## 📝 Code Changes Summary
 
 ### File: `MainTabView.swift`
