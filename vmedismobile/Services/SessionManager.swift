@@ -37,11 +37,11 @@ class SessionManager: ObservableObject {
             updatedSession.isActive = true
             sessions[existingIndex] = updatedSession            // Set as active
             setActiveSession(updatedSession)
-            print("✅ Updated existing session for \(userData.username ?? "") with fresh userData")
-        } else {
+            print("✅ Updated existing session for \(userData.username ?? "") with fresh userData")        } else {
             // Check limit
             if sessions.count >= maxSessions {
-                // Remove oldest inactive session                if let oldestIndex = sessions.enumerated()
+                // Remove oldest inactive session
+                if let oldestIndex = sessions.enumerated()
                     .filter({ !$0.element.isActive })
                     .min(by: { $0.element.lastAccessTime < $1.element.lastAccessTime })?.offset {
                     sessions.remove(at: oldestIndex)
@@ -55,7 +55,8 @@ class SessionManager: ObservableObject {
             setActiveSession(newSession)
             print("✅ Added new session for \(userData.username ?? "")")
         }
-          print("📊 Total sessions: \(sessions.count)")
+        
+        print("📊 Total sessions: \(sessions.count)")
         for (index, session) in sessions.enumerated() {
             let menuCount = session.userData.aksesMenu?.count ?? 0
             let isSuper = session.userData.lvl == 1
@@ -64,7 +65,9 @@ class SessionManager: ObservableObject {
         
         saveSessions()
     }
-      /// Switch ke session lain    func switchSession(_ session: AccountSession) {
+    
+    /// Switch ke session lain
+    func switchSession(_ session: AccountSession) {
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔄 SWITCHING SESSION")
         print("   Target user: \(session.userData.username ?? "unknown")")
@@ -144,11 +147,12 @@ class SessionManager: ObservableObject {
             let encoded = try JSONEncoder().encode(sessions)
             UserDefaults.standard.set(encoded, forKey: sessionsKey)
             print("💾 Saved \(sessions.count) sessions")
-        } catch {
+        } catch {            
             print("❌ Failed to save sessions: \(error)")
         }
     }
-      private func loadSessions() {
+    
+    private func loadSessions() {
         // Load sessions
         if let data = UserDefaults.standard.data(forKey: sessionsKey) {
             do {
