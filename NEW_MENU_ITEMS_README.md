@@ -7,6 +7,7 @@ Added 4 new menu items to the Swift iOS mobile app (vmedismobile) for accessing 
 ## ✅ Changes Made
 
 ### 1. Updated `MenuAccess.swift`
+
 **File**: `d:\RESEARCH\vmedismobile\vmedismobile\Models\MenuAccess.swift`
 
 Added route mappings for the new menu items:
@@ -20,11 +21,13 @@ Added route mappings for the new menu items:
 These mappings connect the iOS routes to the server's mn_url endpoints for access control.
 
 ### 2. Updated `MainTabView.swift`
+
 **File**: `d:\RESEARCH\vmedismobile\vmedismobile\Views\Pages\MainTabView.swift`
 
 Added 2 new parent menu items with submenus:
 
 #### 📊 Laporan Keuangan (Financial Reports)
+
 ```swift
 MenuItem(icon: "chart.bar.doc.horizontal", title: "Laporan Keuangan", subMenus: [
     SubMenuItem(icon: "doc.text", title: "Laporan Neraca Umum", route: "lapneracaumum"),
@@ -33,6 +36,7 @@ MenuItem(icon: "chart.bar.doc.horizontal", title: "Laporan Keuangan", subMenus: 
 ```
 
 #### ⚙️ Sistem (System Settings)
+
 ```swift
 MenuItem(icon: "gearshape.2", title: "Sistem", subMenus: [
     SubMenuItem(icon: "person.2.circle", title: "Manajemen User", route: "lapmanajemenuser"),
@@ -42,28 +46,32 @@ MenuItem(icon: "gearshape.2", title: "Sistem", subMenus: [
 
 ## 🎯 Menu Items Details
 
-| Parent Menu | Submenu Item | Route | Server mn_url | Web Component |
-|------------|--------------|-------|---------------|---------------|
-| **Laporan Keuangan** | Laporan Neraca Umum | `lapneracaumum` | `/laporan-neraca-normal` | `LapNeracaUmumPage` |
-| | Laporan Laba Rugi | `laplabarugi` | `/laporan-laba-rugi` | `LapLabaRugiPage` |
-| **Sistem** | Manajemen User | `lapmanajemenuser` | `/user` | `LapManajemenUserPage` |
-| | Pengaturan Bank | `lappengaturanbank` | `/pengaturan-bank` | `LapPengaturanBankPage` |
+| Parent Menu          | Submenu Item        | Route               | Server mn_url            | Web Component           |
+| -------------------- | ------------------- | ------------------- | ------------------------ | ----------------------- |
+| **Laporan Keuangan** | Laporan Neraca Umum | `lapneracaumum`     | `/laporan-neraca-normal` | `LapNeracaUmumPage`     |
+|                      | Laporan Laba Rugi   | `laplabarugi`       | `/laporan-laba-rugi`     | `LapLabaRugiPage`       |
+| **Sistem**           | Manajemen User      | `lapmanajemenuser`  | `/user`                  | `LapManajemenUserPage`  |
+|                      | Pengaturan Bank     | `lappengaturanbank` | `/pengaturan-bank`       | `LapPengaturanBankPage` |
 
 ## 🔗 Integration Flow
 
 1. **User Navigation**:
+
    - User taps on "Laporan Keuangan" or "Sistem" in the Account tab dropdown
    - Accordion expands to show submenus
    - User taps on specific submenu item
 
 2. **Route Mapping**:
+
    - Route (e.g., `lapneracaumum`) → `MenuURLMapping` → mn_url (e.g., `/laporan-neraca-normal`)
 
 3. **Access Control**:
+
    - System checks if user has access to the mn_url via `MenuAccessManager`
    - Only shows menu items user has permission to access
 
 4. **Navigation**:
+
    - Uses `BypassWebView` to load the web page at `https://{domain}.vmedis.com/mobile?tab={route}`
    - Example: `https://demok99.vmedis.com/mobile?tab=lapneracaumum`
 
@@ -121,11 +129,13 @@ All icons are SF Symbols, available natively in iOS.
 
 The menu items follow the same access control pattern as existing items:
 
-1. **Server-Side Control**: 
+1. **Server-Side Control**:
+
    - User permissions defined in database via `mn_url`
    - GraphQL query `MenuGroupUser` returns accessible menu items
 
 2. **Client-Side Filtering**:
+
    - `MenuAccessManager.hasAccess(to: route)` checks permissions
    - Only accessible menu items displayed to user
    - Non-accessible items automatically hidden
@@ -139,6 +149,7 @@ The menu items follow the same access control pattern as existing items:
 ### Manual Testing Steps:
 
 1. **Login to App**:
+
    ```
    - Open vmedismobile app
    - Login with test credentials
@@ -146,6 +157,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 2. **Check Menu Visibility**:
+
    ```
    - Scroll down in Account tab
    - Look for "Laporan Keuangan" menu (after "Laporan Apotek")
@@ -154,6 +166,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 3. **Test Accordion**:
+
    ```
    - Tap "Laporan Keuangan" → should expand showing 2 items
    - Tap "Sistem" → should expand showing 2 items
@@ -162,6 +175,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 4. **Test Navigation**:
+
    ```
    For each submenu item:
    - Tap menu item
@@ -180,6 +194,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 ### Test URLs:
+
 - Neraca Umum: `https://{domain}.vmedis.com/mobile?tab=lapneracaumum`
 - Laba Rugi: `https://{domain}.vmedis.com/mobile?tab=laplabarugi`
 - Manajemen User: `https://{domain}.vmedis.com/mobile?tab=lapmanajemenuser`
@@ -188,6 +203,7 @@ The menu items follow the same access control pattern as existing items:
 ## 🚀 Deployment
 
 ### Prerequisites:
+
 - Xcode 15+
 - iOS 15+ deployment target
 - Active Apple Developer account
@@ -195,12 +211,14 @@ The menu items follow the same access control pattern as existing items:
 ### Build Steps:
 
 1. **Open Project**:
+
    ```bash
    cd d:\RESEARCH\vmedismobile
    open vmedismobile.xcodeproj
    ```
 
 2. **Clean Build** (Optional but recommended):
+
    ```bash
    # In Xcode: Product > Clean Build Folder
    # Or via terminal:
@@ -208,6 +226,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 3. **Build for Simulator**:
+
    ```bash
    xcodebuild -scheme vmedismobile \
      -destination 'platform=iOS Simulator,name=iPhone 15' \
@@ -215,6 +234,7 @@ The menu items follow the same access control pattern as existing items:
    ```
 
 4. **Run on Simulator**:
+
    - In Xcode: Select simulator and press ⌘R
    - Or use `xcodebuild` with `-run` flag
 
@@ -232,6 +252,7 @@ The menu items follow the same access control pattern as existing items:
 2. **MainTabView.swift** - Added 2 menu sections with 4 total submenu items
 
 **No changes required** in:
+
 - `mobileLayout.jsx` (routes already exist)
 - `ReportPageView.swift` (generic, handles all routes)
 - `BypassWebView.swift` (generic WebView loader)
@@ -244,14 +265,14 @@ Ensure these mn_url values exist in the database `menu` table:
 
 ```sql
 -- Laporan Keuangan
-INSERT INTO menu (mn_url, mn_nama, mn_kode, mn_aktif, mn_devices) 
-VALUES 
+INSERT INTO menu (mn_url, mn_nama, mn_kode, mn_aktif, mn_devices)
+VALUES
   ('/laporan-neraca-normal', 'Laporan Neraca Umum', '##.##', 1, '1,2'),
   ('/laporan-laba-rugi', 'Laporan Laba Rugi', '##.##', 1, '1,2');
 
--- Sistem  
-INSERT INTO menu (mn_url, mn_nama, mn_kode, mn_aktif, mn_devices) 
-VALUES 
+-- Sistem
+INSERT INTO menu (mn_url, mn_nama, mn_kode, mn_aktif, mn_devices)
+VALUES
   ('/user', 'Manajemen User', '##.##', 1, '1,2'),
   ('/pengaturan-bank', 'Pengaturan Bank', '##.##', 1, '1,2');
 ```
@@ -264,8 +285,8 @@ Grant access to user groups via `group_menu` table:
 
 ```sql
 -- Example: Grant access to admin group (gr_id=1)
-INSERT INTO group_menu (gm_gr_id, gm_mn_id) 
-SELECT 1, mn_id FROM menu 
+INSERT INTO group_menu (gm_gr_id, gm_mn_id)
+SELECT 1, mn_id FROM menu
 WHERE mn_url IN (
   '/laporan-neraca-normal',
   '/laporan-laba-rugi',
@@ -290,7 +311,8 @@ WHERE mn_url IN (
 
 **Cause**: User lacks access permissions
 
-**Solution**: 
+**Solution**:
+
 1. Check user's group permissions in database
 2. Verify mn_url exists in menu table
 3. Check GraphQL response includes the mn_url
@@ -301,6 +323,7 @@ WHERE mn_url IN (
 **Cause**: Route mapping issue
 
 **Solution**:
+
 1. Verify route exists in `MenuURLMapping.routeToURL`
 2. Check case sensitivity (routes are lowercased)
 3. Verify web route exists in `mobileLayout.jsx`
@@ -310,6 +333,7 @@ WHERE mn_url IN (
 **Cause**: Domain or network issue
 
 **Solution**:
+
 1. Check userData.domain is set correctly
 2. Verify network connectivity
 3. Check web server is accessible
@@ -318,6 +342,7 @@ WHERE mn_url IN (
 ## 📞 Support
 
 For issues or questions:
+
 1. Check console logs in Xcode for detailed error messages
 2. Verify server-side menu configuration
 3. Test with superadmin account first
@@ -333,12 +358,14 @@ For issues or questions:
 ## 🎉 Summary
 
 Successfully added 4 new menu items to the Swift iOS app:
+
 1. ✅ Laporan Neraca Umum (Balance Sheet Report)
 2. ✅ Laporan Laba Rugi (Profit & Loss Report)
 3. ✅ Manajemen User (User Management)
 4. ✅ Pengaturan Bank (Bank Settings)
 
 All items are properly integrated with:
+
 - Access control system
 - Navigation flow
 - WebView rendering
