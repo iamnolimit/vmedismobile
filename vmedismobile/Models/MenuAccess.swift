@@ -77,10 +77,13 @@ struct MenuURLMapping {
         "lappenjualanobatklinik": "/laporan-penjualan-obat-klinik",
         "laptagihanjaminan": "/laporan-tagihan-jaminan-pasien",
         "lappendapatanpetugasmedis": "/laporan-pendapatan-petugas-medis",
-        
-        // Laporan Keuangan
+          // Laporan Keuangan
         "lapneracaumum": "/laporan-neraca-normal",
         "laplabarugi": "/laporan-laba-rugi",
+        
+        // Sistem
+        "lapmanajemenuser": "/user",
+        "lappengaturanbank": "/pengaturan-bank",
         
         // Customer/VMart
         "customers": "/customer", // Placeholder - sesuaikan dengan server

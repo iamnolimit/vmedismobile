@@ -290,8 +290,7 @@ struct ProfileView: View {
             SubMenuItem(icon: "doc.text.magnifyingglass", title: "Laporan Tagihan Jaminan", route: "laptagihanjaminan"),
             SubMenuItem(icon: "stethoscope", title: "Laporan Pendapatan Petugas Medis", route: "lappendapatanpetugasmedis")
         ]),
-        
-        MenuItem(icon: "pills", title: "Laporan Apotek", subMenus: [
+          MenuItem(icon: "pills", title: "Laporan Apotek", subMenus: [
             SubMenuItem(icon: "cart.fill", title: "Laporan Pembelian", route: "lappembelianobat"),
             SubMenuItem(icon: "creditcard.circle", title: "Laporan Hutang Obat", route: "laphutangobat"),
             SubMenuItem(icon: "bag", title: "Laporan Penjualan Obat", route: "lappenjualanobat"),
@@ -302,6 +301,16 @@ struct ProfileView: View {
             SubMenuItem(icon: "shippingbox", title: "Laporan Stok Opname", route: "lapstokopname"),
             SubMenuItem(icon: "square.stack.3d.up", title: "Laporan Stok Obat", route: "lapstokobat"),
             SubMenuItem(icon: "arrow.left.arrow.right", title: "Laporan Pergantian Shift", route: "lappergantianshift")
+        ]),
+        
+        MenuItem(icon: "chart.bar.doc.horizontal", title: "Laporan Keuangan", subMenus: [
+            SubMenuItem(icon: "doc.text", title: "Laporan Neraca Umum", route: "lapneracaumum"),
+            SubMenuItem(icon: "chart.line.uptrend.xyaxis", title: "Laporan Laba Rugi", route: "laplabarugi")
+        ]),
+        
+        MenuItem(icon: "gearshape.2", title: "Sistem", subMenus: [
+            SubMenuItem(icon: "person.2.circle", title: "Manajemen User", route: "lapmanajemenuser"),
+            SubMenuItem(icon: "building.columns", title: "Pengaturan Bank", route: "lappengaturanbank")
         ])
     ];var body: some View {
         NavigationView {

@@ -139,10 +139,17 @@ struct LoginPageView: View {
                     x: 0,
                     y: 6
                 )
-            }
-            .disabled(!isFormValid || isLoading)
+            }            .disabled(!isFormValid || isLoading)
             .scaleEffect(isFormValid ? 1.0 : 0.98)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)
+            
+            // Forgot Password Link
+            NavigationLink(destination: ForgotPasswordView()) {
+                Text("Lupa Password?")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(accentColor)
+            }
+            .disabled(isLoading)
         }
         .padding(32)
         .background(
@@ -150,9 +157,25 @@ struct LoginPageView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
         )
-    }    // MARK: - Footer Section
+    }
+    
+    // MARK: - Footer Section
     private var footerSection: some View {
         VStack(spacing: 20) {
+            // Register Link
+            HStack(spacing: 6) {
+                Text("Belum punya akun?")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+                
+                NavigationLink(destination: RegisterView()) {
+                    Text("Daftar Sekarang")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(accentColor)
+                }
+                .disabled(isLoading)
+            }
+            
             Text(AppVersion.poweredByText)
                 .font(.system(size: 12))
                 .foregroundColor(.secondary.opacity(0.7))
