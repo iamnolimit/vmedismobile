@@ -5,6 +5,9 @@ struct LoginPageView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var loginService = LoginService()
     
+    // Optional navigation coordinator
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+    
     @State private var subdomain: String = ""
     @State private var username: String = ""
     @State private var password: String = ""
@@ -141,9 +144,10 @@ struct LoginPageView: View {
                 )
             }            .disabled(!isFormValid || isLoading)
             .scaleEffect(isFormValid ? 1.0 : 0.98)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)
-              // Forgot Password Link
-            NavigationLink(destination: LazyView(ForgotPasswordView())) {
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)            // Forgot Password Link
+            Button(action: {
+                navigationCoordinator.pushToForgotPassword()
+            }) {
                 Text("Lupa Password?")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(accentColor)
@@ -164,8 +168,10 @@ struct LoginPageView: View {
             HStack(spacing: 6) {
                 Text("Belum punya akun?")
                     .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-                  NavigationLink(destination: LazyView(RegisterView())) {
+                    .foregroundColor(.secondary)                
+                Button(action: {
+                    navigationCoordinator.pushToRegister()
+                }) {
                     Text("Daftar Sekarang")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(accentColor)
