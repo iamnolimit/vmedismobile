@@ -19,27 +19,30 @@ struct LoginPageView: View {
     
     // Fixed colors for apotek/klinik branding
     private let accentColor = Color.blue
-    private let backgroundColor = Color.blue.opacity(0.1)
-      var body: some View {
-        ZStack {
-            // Background gradient
-            LinearGradient(
-                gradient: Gradient(colors: [Color.blue.opacity(0.1), Color.white]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-              VStack(spacing: 0) {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 40) {
-                        headerSection.padding(.top, 40)
-                        loginFormSection
-                        footerSection
+    private let backgroundColor = Color.blue.opacity(0.1)      var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.blue.opacity(0.1), Color.white]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: geometry.size.height < 700 ? 20 : 30) {
+                            headerSection.padding(.top, geometry.size.height < 700 ? 20 : 40)
+                            loginFormSection
+                            footerSection
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 30)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 40)
                 }
-            }        }        .navigationBarHidden(true)
+            }
+        }.navigationBarHidden(true)
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK") { }
         } message: {
@@ -52,49 +55,46 @@ struct LoginPageView: View {
             RegisterViewWrapper()
         }
     }
-    
-    private var headerSection: some View {
-        VStack(spacing: 12) {
-            // Logo from Bundle Resource
+      private var headerSection: some View {
+        VStack(spacing: 8) {
+            // Logo from Bundle Resource - ukuran lebih kecil untuk compact layout
             if let logoImage = UIImage(named: "logo") {
                 Image(uiImage: logoImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 120, height: 120)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: accentColor.opacity(0.3), radius: 20, x: 0, y: 10)
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: accentColor.opacity(0.2), radius: 10, x: 0, y: 5)
             } else {
                 // Fallback medical icon for apotek/klinik
                 ZStack {
                     Circle()
                         .fill(backgroundColor)
-                        .frame(width: 120, height: 120)
-                        .shadow(color: accentColor.opacity(0.3), radius: 20, x: 0, y: 10)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: accentColor.opacity(0.2), radius: 10, x: 0, y: 5)
                     
                     Image(systemName: "cross.fill")
-                        .font(.system(size: 50, weight: .medium))
+                        .font(.system(size: 35, weight: .medium))
                         .foregroundColor(accentColor)
                 }
             }
             
-            VStack(spacing: 12) {
+            VStack(spacing: 6) {
                 Text("Selamat Datang")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.primary)
                 
                 Text("Masuk ke Vmedis Apotek / Klinik")
-                    .font(.system(size: 16))
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
     }
-    
-    // MARK: - Login Form Section
-        // MARK: - Login Form Section
+      // MARK: - Login Form Section
     private var loginFormSection: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 20) {
+        VStack(spacing: 18) {
+            VStack(spacing: 16) {
                 CleanTextField(
                     title: "Subdomain",
                     text: $subdomain,
@@ -138,16 +138,17 @@ struct LoginPageView: View {
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(height: 52)
                 .background(isFormValid ? accentColor : Color.gray.opacity(0.4))
-                .cornerRadius(16)
+                .cornerRadius(14)
                 .shadow(
                     color: isFormValid ? accentColor.opacity(0.4) : Color.clear,
-                    radius: 12,
+                    radius: 10,
                     x: 0,
-                    y: 6
+                    y: 5
                 )
-            }              .disabled(!isFormValid || isLoading)            
+            }
+            .disabled(!isFormValid || isLoading)            
             .scaleEffect(isFormValid ? 1.0 : 0.98)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)
             
@@ -156,39 +157,49 @@ struct LoginPageView: View {
                 navigationCoordinator.pushToForgotPassword()
             }) {
                 Text("Lupa Password?")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(accentColor)
             }
             .disabled(isLoading)
         }
-        .padding(32)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 20)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
         )
-    }
-      // MARK: - Footer Section
+    }    // MARK: - Footer Section
     private var footerSection: some View {
-        VStack(spacing: 20) {
-            // Register Link            
-            HStack(spacing: 6) {
-                Text("Belum punya akun?")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-                
-                Button(action: {
-                    navigationCoordinator.pushToRegister()
-                }) {
+        VStack(spacing: 16) {
+            // Register Button - lebih prominent
+            Button(action: {
+                navigationCoordinator.pushToRegister()
+            }) {
+                HStack(spacing: 8) {
+                    Text("Belum punya akun?")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                    
                     Text("Daftar Sekarang")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(accentColor)
+                    
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 16))
                         .foregroundColor(accentColor)
                 }
-                .disabled(isLoading)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(accentColor.opacity(0.1))
+                )
             }
+            .disabled(isLoading)
             
             Text(AppVersion.poweredByText)
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.7))
         }
     }
@@ -503,106 +514,7 @@ private struct ForgotPasswordViewContent: View {
 }
 
 private struct RegisterViewWrapper: View {
-    @Environment(\.dismiss) private var dismiss
-    
     var body: some View {
-        NavigationView {
-            RegisterViewContent()
-                .navigationBarItems(
-                    leading: Button("Tutup") {
-                        dismiss()
-                    }
-                )
-        }
-    }
-}
-
-private struct RegisterViewContent: View {
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var domain: String = ""
-    @State private var namaLengkap: String = ""
-    @State private var username: String = ""
-    @State private var email: String = ""
-    @State private var password: String = ""
-    @State private var confirmPassword: String = ""
-    @State private var isLoading: Bool = false
-    
-    private let accentColor = Color.blue
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Text("Daftar Akun")
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text("Silakan lengkapi data untuk mendaftar")
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Domain")
-                            .font(.system(size: 14, weight: .medium))
-                        
-                        HStack {
-                            TextField("Masukkan domain", text: $domain)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .autocapitalization(.none)
-                            Text(".vmedis.com")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Nama Lengkap")
-                            .font(.system(size: 14, weight: .medium))
-                        
-                        TextField("Masukkan nama lengkap", text: $namaLengkap)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Username")
-                            .font(.system(size: 14, weight: .medium))
-                        
-                        TextField("Masukkan username", text: $username)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .autocapitalization(.none)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Email")
-                            .font(.system(size: 14, weight: .medium))
-                        
-                        TextField("Masukkan email", text: $email)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .autocapitalization(.none)
-                            .keyboardType(.emailAddress)
-                    }
-                    
-                    Button(action: {
-                        // Placeholder action
-                        dismiss()
-                    }) {
-                        Text("Daftar")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(accentColor)
-                            .cornerRadius(12)
-                    }
-                    .disabled(domain.isEmpty || namaLengkap.isEmpty || username.isEmpty || email.isEmpty)
-                }
-                .padding(.horizontal, 24)
-                
-                Spacer()
-            }
-        }
+        RegisterWebView()
     }
 }
