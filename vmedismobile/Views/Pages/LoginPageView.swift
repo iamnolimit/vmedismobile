@@ -19,7 +19,8 @@ struct LoginPageView: View {
     
     // Fixed colors for apotek/klinik branding
     private let accentColor = Color.blue
-    private let backgroundColor = Color.blue.opacity(0.1)      var body: some View {
+    private let backgroundColor = Color.blue.opacity(0.1)      
+    var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // Background gradient
