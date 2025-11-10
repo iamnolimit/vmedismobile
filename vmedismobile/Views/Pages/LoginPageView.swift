@@ -39,12 +39,17 @@ struct LoginPageView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 40)
                 }
-            }        }
-        .navigationBarHidden(true)
+            }        }        .navigationBarHidden(true)
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK") { }
         } message: {
             Text(alertMessage)
+        }
+        .sheet(isPresented: $navigationCoordinator.showForgotPassword) {
+            ForgotPasswordViewWrapper()
+        }
+        .sheet(isPresented: $navigationCoordinator.showRegister) {
+            RegisterViewWrapper()
         }
     }
     
@@ -142,23 +147,19 @@ struct LoginPageView: View {
                     x: 0,
                     y: 6
                 )
-            }            
-            .disabled(!isFormValid || isLoading)            
+            }              .disabled(!isFormValid || isLoading)            
             .scaleEffect(isFormValid ? 1.0 : 0.98)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)            // Forgot Password Link
-            NavigationLink(
-                destination: LazyView(ForgotPasswordView()),
-                isActive: $navigationCoordinator.showForgotPassword
-            ) {
-                Button(action: {
-                    navigationCoordinator.pushToForgotPassword()
-                }) {
-                    Text("Lupa Password?")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(accentColor)
-                }
-                .disabled(isLoading)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)
+            
+            // Forgot Password Link
+            Button(action: {
+                navigationCoordinator.pushToForgotPassword()
+            }) {
+                Text("Lupa Password?")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(accentColor)
             }
+            .disabled(isLoading)
         }
         .padding(32)
         .background(
@@ -167,28 +168,23 @@ struct LoginPageView: View {
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
         )
     }
-    
-    // MARK: - Footer Section
+      // MARK: - Footer Section
     private var footerSection: some View {
-        VStack(spacing: 20) {            // Register Link            
+        VStack(spacing: 20) {
+            // Register Link            
             HStack(spacing: 6) {
                 Text("Belum punya akun?")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
                 
-                NavigationLink(
-                    destination: LazyView(RegisterView()),
-                    isActive: $navigationCoordinator.showRegister
-                ) {
-                    Button(action: {
-                        navigationCoordinator.pushToRegister()
-                    }) {
-                        Text("Daftar Sekarang")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(accentColor)
-                    }
-                    .disabled(isLoading)
+                Button(action: {
+                    navigationCoordinator.pushToRegister()
+                }) {
+                    Text("Daftar Sekarang")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(accentColor)
                 }
+                .disabled(isLoading)
             }
             
             Text(AppVersion.poweredByText)
@@ -417,6 +413,97 @@ struct CleanPasswordField: View {
                     )
             )
             .animation(.easeInOut(duration: 0.2), value: isFocused)
+        }
+    }
+}
+
+// MARK: - View Wrappers to avoid scope issues
+private struct ForgotPasswordViewWrapper: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ForgotPasswordViewContent()
+                .navigationBarItems(
+                    leading: Button("Tutup") {
+                        dismiss()
+                    }
+                )
+        }
+    }
+}
+
+private struct ForgotPasswordViewContent: View {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var forgotPasswordService = ForgotPasswordService()
+    
+    @State private var domain: String = ""
+    @State private var email: String = ""
+    @State private var isLoading: Bool = false
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    @State private var alertTitle = ""
+    @State private var isSuccess = false
+    
+    private let accentColor = Color.blue
+    
+    var body: some View {
+        VStack {
+            Text("Lupa Password")
+                .font(.title)
+                .fontWeight(.bold)
+                .padding()
+            
+            Text("Silakan masukkan domain dan email Anda untuk reset password")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding()
+            
+            Spacer()
+        }
+    }
+}
+
+private struct RegisterViewWrapper: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            RegisterViewContent()
+                .navigationBarItems(
+                    leading: Button("Tutup") {
+                        dismiss()
+                    }
+                )
+        }
+    }
+}
+
+private struct RegisterViewContent: View {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var registerService = RegisterService()
+    
+    @State private var domain: String = ""
+    @State private var namaLengkap: String = ""
+    @State private var username: String = ""
+    @State private var email: String = ""
+    @State private var isLoading: Bool = false
+    
+    private let accentColor = Color.blue
+    
+    var body: some View {
+        VStack {
+            Text("Daftar Akun")
+                .font(.title)
+                .fontWeight(.bold)
+                .padding()
+            
+            Text("Silakan lengkapi data untuk mendaftar")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding()
+            
+            Spacer()
         }
     }
 }
