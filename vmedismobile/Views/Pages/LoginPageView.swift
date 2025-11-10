@@ -142,11 +142,12 @@ struct LoginPageView: View {
                     x: 0,
                     y: 6
                 )
-            }            .disabled(!isFormValid || isLoading)
+            }            
+            .disabled(!isFormValid || isLoading)            
             .scaleEffect(isFormValid ? 1.0 : 0.98)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)            // Forgot Password Link
             NavigationLink(
-                destination: ForgotPasswordView(),
+                destination: LazyView(ForgotPasswordView()),
                 isActive: $navigationCoordinator.showForgotPassword
             ) {
                 Button(action: {
@@ -169,14 +170,14 @@ struct LoginPageView: View {
     
     // MARK: - Footer Section
     private var footerSection: some View {
-        VStack(spacing: 20) {            // Register Link
+        VStack(spacing: 20) {            // Register Link            
             HStack(spacing: 6) {
                 Text("Belum punya akun?")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
                 
                 NavigationLink(
-                    destination: RegisterView(),
+                    destination: LazyView(RegisterView()),
                     isActive: $navigationCoordinator.showRegister
                 ) {
                     Button(action: {
