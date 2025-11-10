@@ -9,7 +9,7 @@ struct LoginPageView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var isLoading: Bool = false
-    @State private var showPassword: Bool = false
+    @State private var showPassword: Bool = false    
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
@@ -36,14 +36,14 @@ struct LoginPageView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 40)
                 }
-            }
-        }
+            }        }
         .navigationBarHidden(true)
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK") { }
         } message: {
             Text(alertMessage)
-        }    }
+        }
+    }
     
     private var headerSection: some View {
         VStack(spacing: 12) {
@@ -142,9 +142,8 @@ struct LoginPageView: View {
             }            .disabled(!isFormValid || isLoading)
             .scaleEffect(isFormValid ? 1.0 : 0.98)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)
-            
-            // Forgot Password Link
-            NavigationLink(destination: ForgotPasswordView()) {
+              // Forgot Password Link
+            NavigationLink(destination: LazyView(ForgotPasswordView())) {
                 Text("Lupa Password?")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(accentColor)
@@ -161,14 +160,12 @@ struct LoginPageView: View {
     
     // MARK: - Footer Section
     private var footerSection: some View {
-        VStack(spacing: 20) {
-            // Register Link
+        VStack(spacing: 20) {            // Register Link
             HStack(spacing: 6) {
                 Text("Belum punya akun?")
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
-                
-                NavigationLink(destination: RegisterView()) {
+                  NavigationLink(destination: LazyView(RegisterView())) {
                     Text("Daftar Sekarang")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(accentColor)
