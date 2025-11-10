@@ -145,14 +145,19 @@ struct LoginPageView: View {
             }            .disabled(!isFormValid || isLoading)
             .scaleEffect(isFormValid ? 1.0 : 0.98)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFormValid)            // Forgot Password Link
-            Button(action: {
-                navigationCoordinator.pushToForgotPassword()
-            }) {
-                Text("Lupa Password?")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(accentColor)
+            NavigationLink(
+                destination: ForgotPasswordView(),
+                isActive: $navigationCoordinator.showForgotPassword
+            ) {
+                Button(action: {
+                    navigationCoordinator.pushToForgotPassword()
+                }) {
+                    Text("Lupa Password?")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(accentColor)
+                }
+                .disabled(isLoading)
             }
-            .disabled(isLoading)
         }
         .padding(32)
         .background(
@@ -168,15 +173,21 @@ struct LoginPageView: View {
             HStack(spacing: 6) {
                 Text("Belum punya akun?")
                     .font(.system(size: 15))
-                    .foregroundColor(.secondary)                
-                Button(action: {
-                    navigationCoordinator.pushToRegister()
-                }) {
-                    Text("Daftar Sekarang")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(accentColor)
+                    .foregroundColor(.secondary)
+                
+                NavigationLink(
+                    destination: RegisterView(),
+                    isActive: $navigationCoordinator.showRegister
+                ) {
+                    Button(action: {
+                        navigationCoordinator.pushToRegister()
+                    }) {
+                        Text("Daftar Sekarang")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(accentColor)
+                    }
+                    .disabled(isLoading)
                 }
-                .disabled(isLoading)
             }
             
             Text(AppVersion.poweredByText)

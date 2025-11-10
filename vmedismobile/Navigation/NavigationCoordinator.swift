@@ -1,10 +1,11 @@
-// File: Navigation/NavigationCoordinator.swift - Central navigation management
+// File: Navigation/NavigationCoordinator.swift - Central navigation management for iOS 15.6+
 import SwiftUI
 
-// Navigation coordinator untuk mengelola navigasi antar views
+// Navigation coordinator untuk mengelola navigasi antar views (iOS 15.6 compatible)
 class NavigationCoordinator: ObservableObject {
     @Published var currentView: NavigationDestination = .login
-    @Published var navigationPath = NavigationPath()
+    @Published var showForgotPassword = false
+    @Published var showRegister = false
     
     enum NavigationDestination {
         case login
@@ -18,41 +19,18 @@ class NavigationCoordinator: ObservableObject {
     }
     
     func pushToForgotPassword() {
-        navigationPath.append(NavigationDestination.forgotPassword)
+        showForgotPassword = true
     }
     
     func pushToRegister() {
-        navigationPath.append(NavigationDestination.register)
+        showRegister = true
     }
     
-    func popToRoot() {
-        navigationPath.removeLast(navigationPath.count)
-    }
-}
-
-// Navigation view wrapper untuk handling semua navigasi
-struct NavigationContainer<Content: View>: View {
-    @EnvironmentObject var coordinator: NavigationCoordinator
-    let content: () -> Content
-    
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content
+    func dismissForgotPassword() {
+        showForgotPassword = false
     }
     
-    var body: some View {
-        NavigationStack(path: $coordinator.navigationPath) {
-            content()
-                .navigationDestination(for: NavigationCoordinator.NavigationDestination.self) { destination in
-                    switch destination {                    
-                    case .login:
-                        LoginPageView()
-                    case .forgotPassword:
-                        ForgotPasswordView()
-                    case .register:
-                        RegisterView()
-                    case .mainTab:
-                        EmptyView() // TODO: Replace with actual MainTabView
-                    }                }
-        }
+    func dismissRegister() {
+        showRegister = false
     }
 }

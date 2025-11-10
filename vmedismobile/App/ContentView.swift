@@ -14,11 +14,14 @@ struct ContentView: View {
             } else if appState.showAccountPicker {
                 AccountPickerView()
             } else {
-                NavigationContainer {
+                // For iOS 15.6 compatibility, use NavigationView instead of NavigationStack
+                NavigationView {
                     LoginPageView()
                         .environmentObject(navigationCoordinator)
+                        .navigationBarHidden(true)
                 }
                 .environmentObject(navigationCoordinator)
+                .navigationViewStyle(StackNavigationViewStyle())
             }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.isLoggedIn)
