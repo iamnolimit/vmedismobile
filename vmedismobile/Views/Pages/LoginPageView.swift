@@ -435,31 +435,69 @@ private struct ForgotPasswordViewWrapper: View {
 
 private struct ForgotPasswordViewContent: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var forgotPasswordService = ForgotPasswordService()
     
     @State private var domain: String = ""
     @State private var email: String = ""
     @State private var isLoading: Bool = false
-    @State private var showAlert = false
-    @State private var alertMessage = ""
-    @State private var alertTitle = ""
-    @State private var isSuccess = false
     
     private let accentColor = Color.blue
     
     var body: some View {
-        VStack {
-            Text("Lupa Password")
-                .font(.title)
-                .fontWeight(.bold)
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    Text("Lupa Password")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    
+                    Text("Silakan masukkan domain dan email Anda untuk reset password")
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                }
                 .padding()
-            
-            Text("Silakan masukkan domain dan email Anda untuk reset password")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding()
-            
-            Spacer()
+                
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Domain")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        HStack {
+                            TextField("Masukkan domain", text: $domain)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
+                            Text(".vmedis.com")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Email")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        TextField("Masukkan email", text: $email)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
+                            .keyboardType(.emailAddress)
+                    }
+                    
+                    Button(action: {
+                        // Placeholder action
+                        dismiss()
+                    }) {
+                        Text("Kirim Link Reset Password")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(accentColor)
+                            .cornerRadius(12)
+                    }
+                    .disabled(domain.isEmpty || email.isEmpty)
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
         }
     }
 }
@@ -481,29 +519,90 @@ private struct RegisterViewWrapper: View {
 
 private struct RegisterViewContent: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var registerService = RegisterService()
     
     @State private var domain: String = ""
     @State private var namaLengkap: String = ""
     @State private var username: String = ""
     @State private var email: String = ""
+    @State private var password: String = ""
+    @State private var confirmPassword: String = ""
     @State private var isLoading: Bool = false
     
     private let accentColor = Color.blue
     
     var body: some View {
-        VStack {
-            Text("Daftar Akun")
-                .font(.title)
-                .fontWeight(.bold)
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    Text("Daftar Akun")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    
+                    Text("Silakan lengkapi data untuk mendaftar")
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                }
                 .padding()
-            
-            Text("Silakan lengkapi data untuk mendaftar")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding()
-            
-            Spacer()
+                
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Domain")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        HStack {
+                            TextField("Masukkan domain", text: $domain)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .autocapitalization(.none)
+                            Text(".vmedis.com")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Nama Lengkap")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        TextField("Masukkan nama lengkap", text: $namaLengkap)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Username")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        TextField("Masukkan username", text: $username)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Email")
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        TextField("Masukkan email", text: $email)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .autocapitalization(.none)
+                            .keyboardType(.emailAddress)
+                    }
+                    
+                    Button(action: {
+                        // Placeholder action
+                        dismiss()
+                    }) {
+                        Text("Daftar")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(accentColor)
+                            .cornerRadius(12)
+                    }
+                    .disabled(domain.isEmpty || namaLengkap.isEmpty || username.isEmpty || email.isEmpty)
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+            }
         }
     }
 }
