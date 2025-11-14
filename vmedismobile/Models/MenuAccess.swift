@@ -80,13 +80,13 @@ struct MenuURLMapping {
           // Laporan Keuangan
         "lapneracaumum": "/laporan-neraca-normal",
         "laplabarugi": "/laporan-laba-rugi",
-        
-        // Sistem
+          // Sistem
         "lapmanajemenuser": "/user",
         "lappengaturanbank": "/pengaturan-bank",
         
-        // Customer/VMart
-        "customers": "/customer", // Placeholder - sesuaikan dengan server
+        // Customer/Pasien - Support multiple possible URLs
+        // Customer bisa pakai /pasien, /customer, atau /laporan-pareto-pasien
+        "customers": "/pasien",  // Primary mapping (most common)
         
         // Transaksi
         "pembelianobat": "/pembelian-obat",

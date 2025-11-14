@@ -655,9 +655,21 @@ struct ProfileView: View {
         print("📊 Filtered menu: \(filtered.count) items from \(menuItems.count) total")
         return filtered
     }
-    
-    /// Check access LOKAL dari userMenuAccess (tidak dari UserDefaults)
+      /// Check access LOKAL dari userMenuAccess (tidak dari UserDefaults)
     private func hasLocalAccess(to route: String, accessibleUrls: Set<String>) -> Bool {
+        // Special case: Customer menu support multiple possible URLs
+        if route == "customers" {
+            // Customer bisa pakai /pasien, /customer, atau /laporan-pareto-pasien
+            let customerUrls = ["/pasien", "/customer", "/laporan-pareto-pasien", 
+                              "/laporan-master-pasien", "/laporan-master-pasien-apotik"]
+            let hasCustomerAccess = customerUrls.contains(where: { accessibleUrls.contains($0) })
+            if hasCustomerAccess {
+                let matchedUrl = customerUrls.first(where: { accessibleUrls.contains($0) })
+                print("   ✅ Customer access granted via: \(matchedUrl ?? "unknown")")
+            }
+            return hasCustomerAccess
+        }
+        
         // Map route ke mn_url
         guard let mnUrl = MenuURLMapping.getURL(for: route) else {
             return false
@@ -665,7 +677,7 @@ struct ProfileView: View {
         
         // Check apakah mn_url ada di accessible URLs
         return accessibleUrls.contains(mnUrl)
-    }    /// Load dan filter menu berdasarkan hak akses user
+    }/// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
         // Guard against nil userData during logout
         guard let userData = appState.userData else {
