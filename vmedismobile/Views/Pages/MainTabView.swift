@@ -242,7 +242,7 @@ struct MainTabView: View {
         // NOTE: /lap-obatlaris adalah laporan apotek, BUKAN forecast!
         let forecastMenus = ["/laporan-super-pareto", 
                             "/analisa-penjualan", "/forecast-penjualan", 
-                            "/laporan-trend-penjualan"]
+                            "/laporan-trend-penjualan"]        
         var hasForecastAccess = false
         for url in aksesMenu {
             if forecastMenus.contains(url) {
@@ -250,18 +250,19 @@ struct MainTabView: View {
                 print("🎯 Forecast access GRANTED because user has: \(url)")
                 break
             }
-        }        if !hasForecastAccess {
+        }
+        if !hasForecastAccess {
             print("❌ Forecast access DENIED - no matching forecast menu URLs found")
         }
         
         // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
         // Tidak perlu check customer access di sini
-        
-        // Build accessible tabs list
+          // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
         if hasProductsAccess { tabs.append("products") }
-        if hasOrdersAccess { tabs.append("orders") }        if hasForecastAccess { tabs.append("forecast") }
+        if hasOrdersAccess { tabs.append("orders") }
+        if hasForecastAccess { tabs.append("forecast") }
         // NOTE: Customer HANYA menu item, BUKAN tab!
         tabs.append("account")  // Always accessible
         
