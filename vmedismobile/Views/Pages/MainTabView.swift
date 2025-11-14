@@ -201,10 +201,13 @@ struct MainTabView: View {
             print("⚠️ No menu access in userData - granting only account tab")
             // Default: hanya tab Akun yang accessible
             accessibleTabs = ["account"]
-            isCheckingAccess = false
+            isCheckingAccess = false            
             return
         }
-          print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")        // Regular user - check akses per tab berdasarkan aksesMenu dari userData
+        
+        print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")
+        
+        // Regular user - check akses per tab berdasarkan aksesMenu dari userData
         // Tab access ditentukan berdasarkan apakah user punya menu di kategori tersebut
         var hasHomeAccess = false
         var hasProductsAccess = false
@@ -220,22 +223,26 @@ struct MainTabView: View {
         // Check Products (Obat) tab: Ada menu yang berkaitan dengan obat
         let productsMenus = ["/obat", "/pabrik", "/supplier", "/golongan-obat", "/kategori-obat",
                             "/satuan", "/penjualan-obat", "/pembelian-obat", "/lap-stok",
-                            "/laporan-penjualan-obat", "/laporan-transaksi-pembelian-obat"]
-        hasProductsAccess = aksesMenu.contains(where: { url in
+                            "/laporan-penjualan-obat", "/laporan-transaksi-pembelian-obat"]        hasProductsAccess = aksesMenu.contains(where: { url in
             productsMenus.contains(url)
         })
-          // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
+        
+        // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
         let ordersMenus = ["/laporan-neraca-normal", "/laporan-laba-rugi", "/laporan-jurnal",
                           "/kl-pembayarankasir-v2", "/kln-piutang", "/laporan-piutang-klinik",
-                          "/akun", "/jurnal"]
+                          "/akun", "/jurnal"]    
+                              
         hasOrdersAccess = aksesMenu.contains(where: { url in
             ordersMenus.contains(url)
-        })        // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
+        })
+        
+        // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
         // PENTING: Cek EXACT MATCH untuk menghindari false positive
         // NOTE: /lap-obatlaris adalah laporan apotek, BUKAN forecast!
         let forecastMenus = ["/laporan-super-pareto", 
                             "/analisa-penjualan", "/forecast-penjualan", 
-                            "/laporan-trend-penjualan"]        var hasForecastAccess = false
+                            "/laporan-trend-penjualan"]
+        var hasForecastAccess = false
         for url in aksesMenu {
             if forecastMenus.contains(url) {
                 hasForecastAccess = true
@@ -246,10 +253,10 @@ struct MainTabView: View {
         if !hasForecastAccess {
             print("❌ Forecast access DENIED - no matching forecast menu URLs found")
         }
-        
-        // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
+          // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
         // Tidak perlu check customer access di sini
-          // Build accessible tabs list
+        
+        // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
         if hasProductsAccess { tabs.append("products") }
@@ -257,9 +264,9 @@ struct MainTabView: View {
         if hasForecastAccess { tabs.append("forecast") }
         // NOTE: Customer HANYA menu item, BUKAN tab!
         tabs.append("account")  // Always accessible
+          accessibleTabs = tabs
         
-        accessibleTabs = tabs
-          print("✅ Accessible tabs for user: \(accessibleTabs)")
+        print("✅ Accessible tabs for user: \(accessibleTabs)")
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
         print("   - Obat: \(accessibleTabs.contains("products") ? "✓" : "✗")")
         print("   - Keuangan: \(accessibleTabs.contains("orders") ? "✓" : "✗")")
