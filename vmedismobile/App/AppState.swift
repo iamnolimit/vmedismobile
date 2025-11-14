@@ -97,14 +97,22 @@ class AppState: ObservableObject {
             }
         }
     }
-    
-    func logoutAllAccounts() {
+      func logoutAllAccounts() {
         Task { @MainActor in
+            // Clear menu data first
+            MenuAccessManager.shared.clearMenuData()
+            print("🔄 Logging out all accounts - menu data cleared")
+            
+            // Clear all sessions
             SessionManager.shared.clearAllSessions()
+            
+            // Then update state
+            self.userData = nil
+            self.isLoggedIn = false
+            self.clearLoginState()
+            
+            print("✅ All accounts logged out")
         }
-        self.userData = nil
-        self.isLoggedIn = false
-        clearLoginState()
     }
     
     // MARK: - Persistent Storage

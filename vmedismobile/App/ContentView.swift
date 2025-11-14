@@ -38,13 +38,12 @@ class NavigationCoordinator: ObservableObject {
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var navigationCoordinator = NavigationCoordinator()
-    
-    var body: some View {
+      var body: some View {
         Group {
-            if appState.isLoggedIn, appState.userData != nil {
+            if appState.isLoggedIn, let userData = appState.userData {
                 MainTabView()
                     .environmentObject(appState)
-                    .id(appState.userData?.id ?? "0") // Force complete re-render when userData changes
+                    .id(userData.id ?? "0") // Force complete re-render when userData changes
             } else if appState.showAccountPicker {
                 AccountPickerView()
             } else {
