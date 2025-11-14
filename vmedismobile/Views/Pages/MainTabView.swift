@@ -243,22 +243,37 @@ struct MainTabView: View {
         hasOrdersAccess = aksesMenu.contains(where: { url in
             ordersMenus.contains(url)
         })
-        
-        // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
-        let forecastMenus = ["/laporan-super-pareto?awal=1", "/lap-obatlaris", 
-                            "/laporan-super-pareto", "/analisa-penjualan", 
-                            "/forecast-penjualan", "/laporan-trend-penjualan"]
-        var hasForecastAccess = aksesMenu.contains(where: { url in
-            forecastMenus.contains(url)
-        })
-        
-        // Check Customer tab: Ada menu yang berkaitan dengan customer/pasien
+          // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
+        // PENTING: Cek EXACT MATCH untuk menghindari false positive
+        let forecastMenus = ["/laporan-super-pareto", "/lap-obatlaris", 
+                            "/analisa-penjualan", "/forecast-penjualan", 
+                            "/laporan-trend-penjualan"]
+        var hasForecastAccess = false
+        for url in aksesMenu {
+            if forecastMenus.contains(url) {
+                hasForecastAccess = true
+                print("🎯 Forecast access GRANTED because user has: \(url)")
+                break
+            }
+        }
+        if !hasForecastAccess {
+            print("❌ Forecast access DENIED - no matching forecast menu URLs found")
+        }
+          // Check Customer tab: Ada menu yang berkaitan dengan customer/pasien
+        // PENTING: Cek EXACT MATCH untuk menghindari false positive
         let customersMenus = ["/pasien", "/customer", "/laporan-registrasi-pasien", 
                              "/laporan-kunjungan-pasien", "/laporan-pareto-pasien", 
                              "/laporan-janji-dengan-dokter"]
-        hasCustomersAccess = aksesMenu.contains(where: { url in
-            customersMenus.contains(url)
-        })
+        for url in aksesMenu {
+            if customersMenus.contains(url) {
+                hasCustomersAccess = true
+                print("🎯 Customer access GRANTED because user has: \(url)")
+                break
+            }
+        }
+        if !hasCustomersAccess {
+            print("❌ Customer access DENIED - no matching customer menu URLs found")
+        }
           // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
