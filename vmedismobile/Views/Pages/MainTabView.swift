@@ -66,14 +66,13 @@ struct MainTabView: View {
                             Text("Keuangan")
                         }
                         .tag(2)
-                }
-                  // 4. Forecast Tab - conditional
-                if accessibleTabs.contains("forecast") {
-                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
-                        .id("forecast-tab-\(userData.id ?? "0")")
+                }                  // 4. Customer Tab - conditional
+                if accessibleTabs.contains("customers") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
+                        .id("customers-tab-\(userData.id ?? "0")")
                         .tabItem {
-                            Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
-                            Text("Forecast")
+                            Image(systemName: selectedTab == 3 ? "person.3.fill" : "person.3")
+                            Text("Customer")
                         }                        
                         .tag(3)
                 }
@@ -191,11 +190,10 @@ struct MainTabView: View {
         print("🔐 Checking tab access for user (ID: \(userData.id ?? "N/A"))...")
         
         let userLevel = userData.lvl ?? 999
-        
-        // Superadmin (lvl=1) - full access ke semua tab
+          // Superadmin (lvl=1) - full access ke semua tab
         if userLevel == 1 {
             print("👑 Superadmin detected - granting full tab access")
-            accessibleTabs = ["home", "products", "orders", "forecast", "account"]
+            accessibleTabs = ["home", "products", "orders", "customers", "account"]
             isCheckingAccess = false
             return
         }
@@ -208,29 +206,59 @@ struct MainTabView: View {
             isCheckingAccess = false
             return
         }
+          print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")
+          // Regular user - check akses per tab berdasarkan aksesMenu dari userData
+        // Tab access ditentukan berdasarkan apakah user punya menu di kategori tersebut
+        var hasHomeAccess = false
+        var hasProductsAccess = false
+        var hasOrdersAccess = false
+        var hasCustomersAccess = false
         
-        print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")
-        
-        // Regular user - check akses per tab berdasarkan aksesMenu dari userData
-        let allTabs = ["home", "products", "orders", "forecast", "account"]
-        accessibleTabs = allTabs.filter { tabName in
-            // Tab Akun selalu accessible
-            if tabName == "account" {
-                return true
-            }
-            
-            // Check apakah tab accessible
-            if let mnUrl = MenuURLMapping.getURL(for: tabName) {
-                return aksesMenu.contains(mnUrl)
-            }
-            return false
+        // Check Home tab: Jika ada menu apapun dari kategori Klinik/Apotek
+        // atau jika ada minimal 1 menu URL (full access users)
+        if aksesMenu.count > 0 {
+            hasHomeAccess = true  // Ada menu = ada home access
         }
+        
+        // Check Products (Obat) tab: Ada menu yang berkaitan dengan obat
+        let productsMenus = ["/obat", "/pabrik", "/supplier", "/golongan-obat", "/kategori-obat",
+                            "/satuan", "/penjualan-obat", "/pembelian-obat", "/lap-stok",
+                            "/laporan-penjualan-obat", "/laporan-transaksi-pembelian-obat"]
+        hasProductsAccess = aksesMenu.contains(where: { url in
+            productsMenus.contains(url)
+        })
+        
+        // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
+        let ordersMenus = ["/laporan-neraca-normal", "/laporan-laba-rugi", "/laporan-jurnal",
+                          "/kl-pembayarankasir-v2", "/kln-piutang", "/laporan-piutang-klinik",
+                          "/akun", "/jurnal"]
+        hasOrdersAccess = aksesMenu.contains(where: { url in
+            ordersMenus.contains(url)
+        })
+        
+        // Check Customer tab: Ada menu yang berkaitan dengan customer/pasien
+        let customersMenus = ["/pasien", "/customer", "/laporan-registrasi-pasien", 
+                             "/laporan-kunjungan-pasien", "/laporan-pareto-pasien", 
+                             "/laporan-janji-dengan-dokter"]
+        hasCustomersAccess = aksesMenu.contains(where: { url in
+            customersMenus.contains(url)
+        })
+        
+        // Build accessible tabs list
+        var tabs: [String] = []
+        if hasHomeAccess { tabs.append("home") }
+        if hasProductsAccess { tabs.append("products") }
+        if hasOrdersAccess { tabs.append("orders") }
+        if hasCustomersAccess { tabs.append("customers") }
+        tabs.append("account")  // Always accessible
+        
+        accessibleTabs = tabs
         
         print("✅ Accessible tabs for user: \(accessibleTabs)")
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
         print("   - Obat: \(accessibleTabs.contains("products") ? "✓" : "✗")")
         print("   - Keuangan: \(accessibleTabs.contains("orders") ? "✓" : "✗")")
-        print("   - Forecast: \(accessibleTabs.contains("forecast") ? "✓" : "✗")")
+        print("   - Customer: \(accessibleTabs.contains("customers") ? "✓" : "✗")")
         print("   - Akun: ✓ (always)")
         
         isCheckingAccess = false
