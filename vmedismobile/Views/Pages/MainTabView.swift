@@ -56,8 +56,7 @@ struct MainTabView: View {
                             Text("Obat")
                         }
                         .tag(1)
-                }
-                  // 3. Keuangan Tab - conditional
+                }                // 3. Keuangan Tab - conditional
                 if accessibleTabs.contains("orders") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=orders")
                         .id("keuangan-tab-\(userData.id ?? "0")")
@@ -66,18 +65,30 @@ struct MainTabView: View {
                             Text("Keuangan")
                         }
                         .tag(2)
-                }                  // 4. Customer Tab - conditional
+                }
+                
+                // 4. Forecast Tab - conditional
+                if accessibleTabs.contains("forecast") {
+                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
+                        .id("forecast-tab-\(userData.id ?? "0")")
+                        .tabItem {
+                            Image(systemName: selectedTab == 3 ? "chart.line.uptrend.xyaxis" : "chart.line.uptrend.xyaxis")
+                            Text("Forecast")
+                        }
+                        .tag(3)
+                }
+                
+                // 5. Customer Tab - conditional
                 if accessibleTabs.contains("customers") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
                         .id("customers-tab-\(userData.id ?? "0")")
                         .tabItem {
-                            Image(systemName: selectedTab == 3 ? "person.3.fill" : "person.3")
+                            Image(systemName: selectedTab == 4 ? "person.3.fill" : "person.3")
                             Text("Customer")
                         }                        
-                        .tag(3)
+                        .tag(4)
                 }
-                
-                // 5. Account Tab - always accessible
+                  // 6. Account Tab - always accessible
                 ProfileView(
                     userData: userData,
                     navigationRoute: $navigationRoute,
@@ -88,10 +99,10 @@ struct MainTabView: View {
                 )
                 .id("profile-tab-\(userData.id ?? "0")") // Force re-render when userData changes (critical for account switching!)
                 .tabItem {
-                    Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
+                    Image(systemName: selectedTab == 5 ? "person.circle.fill" : "person.circle")
                     Text("Akun")
                 }
-                .tag(4)
+                .tag(5)
             }
             .id("tabview-\(userData.id ?? "0")") // Force TabView re-render on userData change
             .accentColor(.blue)
@@ -152,15 +163,14 @@ struct MainTabView: View {
             if let submenu = submenu, !submenu.isEmpty {
                 print("📂 Should expand submenu: \(submenu)")
             }
-            
-            // Save current tab before switching (for back navigation)
-            if self.selectedTab != 4 {
+              // Save current tab before switching (for back navigation)
+            if self.selectedTab != 5 {
                 self.previousTab = self.selectedTab
                 print("💾 Saved previous tab: \(self.selectedTab)")
             }
             
-            // Switch ke tab Akun (index 4)
-            self.selectedTab = 4
+            // Switch ke tab Akun (index 5)
+            self.selectedTab = 5
             
             // Set navigation state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -189,11 +199,10 @@ struct MainTabView: View {
         
         print("🔐 Checking tab access for user (ID: \(userData.id ?? "N/A"))...")
         
-        let userLevel = userData.lvl ?? 999
-          // Superadmin (lvl=1) - full access ke semua tab
+        let userLevel = userData.lvl ?? 999        // Superadmin (lvl=1) - full access ke semua tab
         if userLevel == 1 {
             print("👑 Superadmin detected - granting full tab access")
-            accessibleTabs = ["home", "products", "orders", "customers", "account"]
+            accessibleTabs = ["home", "products", "orders", "forecast", "customers", "account"]
             isCheckingAccess = false
             return
         }
@@ -227,13 +236,20 @@ struct MainTabView: View {
         hasProductsAccess = aksesMenu.contains(where: { url in
             productsMenus.contains(url)
         })
-        
-        // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
+          // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
         let ordersMenus = ["/laporan-neraca-normal", "/laporan-laba-rugi", "/laporan-jurnal",
                           "/kl-pembayarankasir-v2", "/kln-piutang", "/laporan-piutang-klinik",
                           "/akun", "/jurnal"]
         hasOrdersAccess = aksesMenu.contains(where: { url in
             ordersMenus.contains(url)
+        })
+        
+        // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
+        let forecastMenus = ["/laporan-super-pareto?awal=1", "/lap-obatlaris", 
+                            "/laporan-super-pareto", "/analisa-penjualan", 
+                            "/forecast-penjualan", "/laporan-trend-penjualan"]
+        var hasForecastAccess = aksesMenu.contains(where: { url in
+            forecastMenus.contains(url)
         })
         
         // Check Customer tab: Ada menu yang berkaitan dengan customer/pasien
@@ -243,12 +259,12 @@ struct MainTabView: View {
         hasCustomersAccess = aksesMenu.contains(where: { url in
             customersMenus.contains(url)
         })
-        
-        // Build accessible tabs list
+          // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
         if hasProductsAccess { tabs.append("products") }
         if hasOrdersAccess { tabs.append("orders") }
+        if hasForecastAccess { tabs.append("forecast") }
         if hasCustomersAccess { tabs.append("customers") }
         tabs.append("account")  // Always accessible
         
@@ -258,6 +274,7 @@ struct MainTabView: View {
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
         print("   - Obat: \(accessibleTabs.contains("products") ? "✓" : "✗")")
         print("   - Keuangan: \(accessibleTabs.contains("orders") ? "✓" : "✗")")
+        print("   - Forecast: \(accessibleTabs.contains("forecast") ? "✓" : "✗")")
         print("   - Customer: \(accessibleTabs.contains("customers") ? "✓" : "✗")")
         print("   - Akun: ✓ (always)")
         
