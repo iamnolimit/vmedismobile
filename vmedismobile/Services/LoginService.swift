@@ -134,7 +134,7 @@ private struct GraphQLMenuItem: Codable {
 
 @MainActor
 class LoginService: ObservableObject {
-    private let baseURL = "https://api3.vmedis.com"
+    private let baseURL = "https://api5.vmedis.com"
     private let domainValidationURL = "https://api3penjualan.vmedis.com"
     
     // MARK: - Domain Validation
