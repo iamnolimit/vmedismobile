@@ -892,10 +892,8 @@ struct ReportPageView: View {
 }
 
 // MARK: - Account Management Section
-struct AccountManagementSection: View {
-    @StateObject private var sessionManager = SessionManager.shared
+struct AccountManagementSection: View {    @StateObject private var sessionManager = SessionManager.shared
     @EnvironmentObject var appState: AppState
-    @State private var showingAddAccountSheet = false
     @State private var showingDeleteAlert = false
     @State private var sessionToDelete: AccountSession?
     @State private var showingAccountDropdown = false
@@ -1074,13 +1072,17 @@ struct AccountManagementSection: View {
                                 .padding(.leading, 60) // SAMA dengan submenu divider
                         }
                     }
-                    
-                    // Add Account Button - SAMA dengan submenu item
+                      // Add Account Button - SAMA dengan submenu item
                     Divider()
                     
                     Button(action: {
                         showingAccountDropdown = false
-                        showingAddAccountSheet = true
+                        // LANGSUNG ke login tanpa konfirmasi sheet
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            // Logout tapi session tetap tersimpan
+                            appState.isLoggedIn = false
+                            // Jangan set appState.userData = nil agar tidak crash
+                        }
                     }) {
                         HStack(spacing: 12) {
                             // Indentation 20pt
@@ -1118,14 +1120,10 @@ struct AccountManagementSection: View {
                     .disabled(!sessionManager.canAddMoreSessions())
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
+            }        }
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .sheet(isPresented: $showingAddAccountSheet) {
-            AddAccountSheet()
-        }
         .alert(isPresented: $showingDeleteAlert) {
             Alert(
                 title: Text("Hapus Akun"),
@@ -1157,75 +1155,6 @@ struct AccountManagementSection: View {
                 return URL(string: baseImageURL + klLogo)
             }
         }
-        
-        return nil
-    }
-}
-
-// MARK: - Add Account Sheet
-struct AddAccountSheet: View {
-    @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var appState: AppState
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Image(systemName: "person.badge.plus")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
-                    .padding(.top, 60)
-                
-                Text("Tambah Akun Baru")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                Text("Akun saat ini akan tetap tersimpan. Anda akan diarahkan ke halaman login untuk menambahkan akun baru.")
-                    .font(.body)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 10)
-                
-                Spacer()
-                
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                    // Logout tapi jangan hapus current session
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        // Set flag agar session tetap tersimpan
-                        appState.isLoggedIn = false
-                        appState.userData = nil
-                        // Don't call logout() karena itu akan remove session
-                    }
-                }) {
-                    Text("Lanjutkan ke Login")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
-                }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 20)
-                
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Text("Batal")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .padding(.bottom, 30)
-                }
-            }
-            .navigationBarTitle("", displayMode: .inline)
-            .navigationBarItems(trailing: Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.gray)
-            })
-        }
+          return nil
     }
 }

@@ -73,12 +73,11 @@ struct AccountPickerView: View {
                     }
                     .disabled(selectedSession == nil)
                     .padding(.horizontal, 24)
-                    
-                    // Add New Account
+                      // Add New Account - Langsung logout tanpa hapus session
                     Button(action: {
-                        // Go to login page
-                        sessionManager.clearAllSessions()
-                        appState.logoutAllAccounts()
+                        // Logout tapi jangan hapus sessions
+                        appState.isLoggedIn = false
+                        // Jangan set appState.userData = nil untuk hindari crash
                     }) {
                         HStack {
                             Image(systemName: "plus.circle")
