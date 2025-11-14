@@ -184,10 +184,12 @@ struct MainTabView: View {
             isCheckingAccess = false
             return
         }
-        
+          
         print("🔐 Checking tab access for user (ID: \(userData.id ?? "N/A"))...")
         
-        let userLevel = userData.lvl ?? 999        // Superadmin (lvl=1) - full access ke semua tab
+        let userLevel = userData.lvl ?? 999
+        
+        // Superadmin (lvl=1) - full access ke semua tab
         if userLevel == 1 {
             print("👑 Superadmin detected - granting full tab access")
             // NOTE: Customer BUKAN tab, hanya menu item!
@@ -198,10 +200,10 @@ struct MainTabView: View {
         
         // Load menu access LANGSUNG dari userData (bukan dari UserDefaults!)
         guard let aksesMenu = userData.aksesMenu, !aksesMenu.isEmpty else {
-            print("⚠️ No menu access in userData - granting only account tab")
+            print("⚠️ No menu access in userData - granting only account tab")            
             // Default: hanya tab Akun yang accessible
             accessibleTabs = ["account"]
-            isCheckingAccess = false            
+            isCheckingAccess = false
             return
         }
         
@@ -219,19 +221,18 @@ struct MainTabView: View {
         if aksesMenu.count > 0 {
             hasHomeAccess = true  // Ada menu = ada home access
         }
-        
-        // Check Products (Obat) tab: Ada menu yang berkaitan dengan obat
+          // Check Products (Obat) tab: Ada menu yang berkaitan dengan obat
         let productsMenus = ["/obat", "/pabrik", "/supplier", "/golongan-obat", "/kategori-obat",
                             "/satuan", "/penjualan-obat", "/pembelian-obat", "/lap-stok",
-                            "/laporan-penjualan-obat", "/laporan-transaksi-pembelian-obat"]        hasProductsAccess = aksesMenu.contains(where: { url in
+                            "/laporan-penjualan-obat", "/laporan-transaksi-pembelian-obat"]
+        hasProductsAccess = aksesMenu.contains(where: { url in
             productsMenus.contains(url)
         })
-        
-        // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
+          // Check Orders (Keuangan) tab: Ada menu yang berkaitan dengan keuangan/kasir
         let ordersMenus = ["/laporan-neraca-normal", "/laporan-laba-rugi", "/laporan-jurnal",
                           "/kl-pembayarankasir-v2", "/kln-piutang", "/laporan-piutang-klinik",
-                          "/akun", "/jurnal"]    
-                              
+                          "/akun", "/jurnal"]
+        
         hasOrdersAccess = aksesMenu.contains(where: { url in
             ordersMenus.contains(url)
         })
@@ -249,22 +250,22 @@ struct MainTabView: View {
                 print("🎯 Forecast access GRANTED because user has: \(url)")
                 break
             }
-        }
-        if !hasForecastAccess {
+        }        if !hasForecastAccess {
             print("❌ Forecast access DENIED - no matching forecast menu URLs found")
         }
-          // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
+        
+        // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
         // Tidak perlu check customer access di sini
         
         // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
         if hasProductsAccess { tabs.append("products") }
-        if hasOrdersAccess { tabs.append("orders") }
-        if hasForecastAccess { tabs.append("forecast") }
+        if hasOrdersAccess { tabs.append("orders") }        if hasForecastAccess { tabs.append("forecast") }
         // NOTE: Customer HANYA menu item, BUKAN tab!
         tabs.append("account")  // Always accessible
-          accessibleTabs = tabs
+        
+        accessibleTabs = tabs
         
         print("✅ Accessible tabs for user: \(accessibleTabs)")
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
