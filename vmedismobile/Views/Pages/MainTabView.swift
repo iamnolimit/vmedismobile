@@ -66,8 +66,7 @@ struct MainTabView: View {
                         }
                         .tag(2)
                 }
-                
-                // 4. Forecast Tab - conditional
+                  // 4. Forecast Tab - conditional
                 if accessibleTabs.contains("forecast") {
                     LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=forecast")
                         .id("forecast-tab-\(userData.id ?? "0")")
@@ -77,18 +76,8 @@ struct MainTabView: View {
                         }
                         .tag(3)
                 }
-                
-                // 5. Customer Tab - conditional
-                if accessibleTabs.contains("customers") {
-                    LoadingBypassWebView(userData: userData, destinationUrl: "mobile?tab=customers")
-                        .id("customers-tab-\(userData.id ?? "0")")
-                        .tabItem {
-                            Image(systemName: selectedTab == 4 ? "person.3.fill" : "person.3")
-                            Text("Customer")
-                        }                        
-                        .tag(4)
-                }
-                  // 6. Account Tab - always accessible
+                  // NOTE: Customer tab DIHAPUS - sekarang hanya menu item di Account tab!
+                  // 5. Account Tab - always accessible (tag 4 karena Customer dihapus)
                 ProfileView(
                     userData: userData,
                     navigationRoute: $navigationRoute,
@@ -99,10 +88,10 @@ struct MainTabView: View {
                 )
                 .id("profile-tab-\(userData.id ?? "0")") // Force re-render when userData changes (critical for account switching!)
                 .tabItem {
-                    Image(systemName: selectedTab == 5 ? "person.circle.fill" : "person.circle")
+                    Image(systemName: selectedTab == 4 ? "person.circle.fill" : "person.circle")
                     Text("Akun")
                 }
-                .tag(5)
+                .tag(4)
             }
             .id("tabview-\(userData.id ?? "0")") // Force TabView re-render on userData change
             .accentColor(.blue)
@@ -162,15 +151,14 @@ struct MainTabView: View {
             let submenu = userInfo["submenu"] as? String
             if let submenu = submenu, !submenu.isEmpty {
                 print("📂 Should expand submenu: \(submenu)")
-            }
-              // Save current tab before switching (for back navigation)
-            if self.selectedTab != 5 {
+            }            // Save current tab before switching (for back navigation)
+            if self.selectedTab != 4 {
                 self.previousTab = self.selectedTab
                 print("💾 Saved previous tab: \(self.selectedTab)")
             }
             
-            // Switch ke tab Akun (index 5)
-            self.selectedTab = 5
+            // Switch ke tab Akun (index 4, karena Customer tab dihapus)
+            self.selectedTab = 4
             
             // Set navigation state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -202,7 +190,8 @@ struct MainTabView: View {
         let userLevel = userData.lvl ?? 999        // Superadmin (lvl=1) - full access ke semua tab
         if userLevel == 1 {
             print("👑 Superadmin detected - granting full tab access")
-            accessibleTabs = ["home", "products", "orders", "forecast", "customers", "account"]
+            // NOTE: Customer BUKAN tab, hanya menu item!
+            accessibleTabs = ["home", "products", "orders", "forecast", "account"]
             isCheckingAccess = false
             return
         }
@@ -215,13 +204,12 @@ struct MainTabView: View {
             isCheckingAccess = false
             return
         }
-          print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")
-          // Regular user - check akses per tab berdasarkan aksesMenu dari userData
+          print("📋 Checking tab access from userData.aksesMenu (\(aksesMenu.count) items)")        // Regular user - check akses per tab berdasarkan aksesMenu dari userData
         // Tab access ditentukan berdasarkan apakah user punya menu di kategori tersebut
         var hasHomeAccess = false
         var hasProductsAccess = false
         var hasOrdersAccess = false
-        var hasCustomersAccess = false
+        // NOTE: Customer TIDAK perlu var karena bukan tab!
         
         // Check Home tab: Jika ada menu apapun dari kategori Klinik/Apotek
         // atau jika ada minimal 1 menu URL (full access users)
@@ -242,10 +230,10 @@ struct MainTabView: View {
                           "/akun", "/jurnal"]
         hasOrdersAccess = aksesMenu.contains(where: { url in
             ordersMenus.contains(url)
-        })
-          // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
+        })        // Check Forecast tab: Ada menu yang berkaitan dengan analisa/forecast
         // PENTING: Cek EXACT MATCH untuk menghindari false positive
-        let forecastMenus = ["/laporan-super-pareto", "/lap-obatlaris", 
+        // NOTE: /lap-obatlaris adalah laporan apotek, BUKAN forecast!
+        let forecastMenus = ["/laporan-super-pareto", 
                             "/analisa-penjualan", "/forecast-penjualan", 
                             "/laporan-trend-penjualan"]
         var hasForecastAccess = false
@@ -255,43 +243,29 @@ struct MainTabView: View {
                 print("🎯 Forecast access GRANTED because user has: \(url)")
                 break
             }
-        }
-        if !hasForecastAccess {
+        }        if !hasForecastAccess {
             print("❌ Forecast access DENIED - no matching forecast menu URLs found")
         }
-          // Check Customer tab: Ada menu yang berkaitan dengan customer/pasien
-        // PENTING: Cek EXACT MATCH untuk menghindari false positive
-        let customersMenus = ["/pasien", "/customer", "/laporan-registrasi-pasien", 
-                             "/laporan-kunjungan-pasien", "/laporan-pareto-pasien", 
-                             "/laporan-janji-dengan-dokter"]
-        for url in aksesMenu {
-            if customersMenus.contains(url) {
-                hasCustomersAccess = true
-                print("🎯 Customer access GRANTED because user has: \(url)")
-                break
-            }
-        }
-        if !hasCustomersAccess {
-            print("❌ Customer access DENIED - no matching customer menu URLs found")
-        }
+        
+        // NOTE: Customer BUKAN tab, hanya menu item di Account tab!
+        // Tidak perlu check customer access di sini
           // Build accessible tabs list
         var tabs: [String] = []
         if hasHomeAccess { tabs.append("home") }
         if hasProductsAccess { tabs.append("products") }
         if hasOrdersAccess { tabs.append("orders") }
         if hasForecastAccess { tabs.append("forecast") }
-        if hasCustomersAccess { tabs.append("customers") }
+        // NOTE: Customer HANYA menu item, BUKAN tab!
         tabs.append("account")  // Always accessible
         
         accessibleTabs = tabs
-        
-        print("✅ Accessible tabs for user: \(accessibleTabs)")
+          print("✅ Accessible tabs for user: \(accessibleTabs)")
         print("   - Home: \(accessibleTabs.contains("home") ? "✓" : "✗")")
         print("   - Obat: \(accessibleTabs.contains("products") ? "✓" : "✗")")
         print("   - Keuangan: \(accessibleTabs.contains("orders") ? "✓" : "✗")")
         print("   - Forecast: \(accessibleTabs.contains("forecast") ? "✓" : "✗")")
-        print("   - Customer: \(accessibleTabs.contains("customers") ? "✓" : "✗")")
         print("   - Akun: ✓ (always)")
+        print("   - NOTE: Customer adalah menu item, bukan tab terpisah")
         
         isCheckingAccess = false
     }
