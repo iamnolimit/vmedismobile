@@ -7,16 +7,21 @@ struct MainTabView: View {
     @State private var previousTab: Int? = nil // Track previous tab for back navigation
     @State private var navigationRoute: String?
     @State private var shouldNavigateToReport = false
-    @State private var submenuToExpand: String?
-    @State private var accessibleTabs: [String] = []
+    @State private var submenuToExpand: String?    @State private var accessibleTabs: [String] = []
     @State private var isCheckingAccess = true
     
-    // Computed property to get current userData (always non-nil since we only show MainTabView when logged in)
-    private var userData: UserData {
-        return appState.userData!
+    var body: some View {
+        // Guard against nil userData (can happen during logout transition)
+        guard let userData = appState.userData else {
+            // Return empty view if userData is nil (during logout)
+            return AnyView(EmptyView())
+        }
+        
+        return AnyView(mainContent(userData: userData))
     }
     
-    var body: some View {
+    @ViewBuilder
+    private func mainContent(userData: UserData) -> some View {
         if isCheckingAccess {
             // Loading state saat check access
             VStack {
@@ -171,10 +176,17 @@ struct MainTabView: View {
             }
         }
     }
-    
-    // MARK: - Tab Access Control
+      // MARK: - Tab Access Control
       /// Check akses user ke setiap tab
     private func checkTabAccess() {
+        // Guard against nil userData during logout
+        guard let userData = appState.userData else {
+            print("⚠️ userData is nil - user logged out")
+            accessibleTabs = []
+            isCheckingAccess = false
+            return
+        }
+        
         print("🔐 Checking tab access for user (ID: \(userData.id ?? "N/A"))...")
         
         let userLevel = userData.lvl ?? 999
@@ -609,8 +621,17 @@ struct ProfileView: View {
         
         // Check apakah mn_url ada di accessible URLs
         return accessibleUrls.contains(mnUrl)
-    }/// Load dan filter menu berdasarkan hak akses user
+    }    /// Load dan filter menu berdasarkan hak akses user
     private func loadUserMenuAccess() {
+        // Guard against nil userData during logout
+        guard let userData = appState.userData else {
+            print("⚠️ userData is nil - user logged out, clearing menu")
+            filteredMenuItems = []
+            userMenuAccess = []
+            isLoadingMenu = false
+            return
+        }
+        
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔐 LOADING MENU ACCESS FOR USER")
         print("   Username: \(userData.username ?? "unknown")")
