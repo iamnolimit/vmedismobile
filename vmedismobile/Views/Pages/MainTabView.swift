@@ -1151,11 +1151,12 @@ struct AccountManagementSection: View {    @StateObject private var sessionManag
                     }
                       // Add Account Button - SAMA dengan submenu item
                     Divider()
-                    
-                    Button(action: {
+                      Button(action: {
                         showingAccountDropdown = false
                         // LANGSUNG ke login tanpa konfirmasi sheet
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            // Set flag bahwa ini adalah "add account" flow
+                            appState.isAddingAccount = true
                             // Logout tapi session tetap tersimpan
                             appState.isLoggedIn = false
                             // Jangan set appState.userData = nil agar tidak crash

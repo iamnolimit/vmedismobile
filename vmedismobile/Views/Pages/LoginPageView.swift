@@ -19,8 +19,7 @@ struct LoginPageView: View {
     
     // Fixed colors for apotek/klinik branding
     private let accentColor = Color.blue
-    private let backgroundColor = Color.blue.opacity(0.1)      
-    var body: some View {
+    private let backgroundColor = Color.blue.opacity(0.1)    var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // Background gradient
@@ -32,6 +31,37 @@ struct LoginPageView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // Navigation Bar - hanya tampil jika isAddingAccount
+                    if appState.isAddingAccount {
+                        HStack {
+                            Button(action: {
+                                // Kembali ke account picker
+                                appState.isAddingAccount = false
+                                
+                                // Restore last active session jika ada
+                                if let lastSession = SessionManager.shared.sessions.first(where: { $0.isActive }) {
+                                    appState.switchAccount(to: lastSession)
+                                } else if let firstSession = SessionManager.shared.sessions.first {
+                                    appState.switchAccount(to: firstSession)
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("Kembali")
+                                        .font(.system(size: 17))
+                                }
+                                .foregroundColor(accentColor)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color.white.opacity(0.95))
+                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                    }
+                    
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: geometry.size.height < 700 ? 20 : 30) {
                             headerSection.padding(.top, geometry.size.height < 700 ? 20 : 40)
@@ -43,7 +73,8 @@ struct LoginPageView: View {
                     }
                 }
             }
-        }.navigationBarHidden(true)
+        }
+        .navigationBarHidden(true)
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK") { }
         } message: {
@@ -178,7 +209,7 @@ struct LoginPageView: View {
                 navigationCoordinator.pushToRegister()
             }) {
                 HStack(spacing: 8) {
-                    Text("Belum punya akun?")
+                    Text("Belum punya akun Vmedis?")
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                     
@@ -253,11 +284,12 @@ struct LoginPageView: View {
                     print("- Token: \(userData.token ?? "")")
                     print("- Klinik: \(userData.kl_nama ?? "")")
                     print("- Level: \(userData.lvl ?? 0)")
-                    
-                    // Update AppState with login data
+                      // Update AppState with login data
                     await MainActor.run {
                         print("=== UPDATING APP STATE ===")
                         appState.login(with: userData)
+                        // Reset flag setelah login berhasil
+                        appState.isAddingAccount = false
                         print("AppState login successful")
                         print("isLoggedIn: \(appState.isLoggedIn)")
                     }

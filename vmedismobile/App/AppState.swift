@@ -5,6 +5,7 @@ class AppState: ObservableObject {
     @Published var isLoggedIn = false
     @Published var userData: UserData?
     @Published var showAccountPicker = false
+    @Published var isAddingAccount = false // Flag untuk detect "Tambah Akun" flow
     
     private let userDefaultsKey = "isUserLoggedIn"
     private let userDataKey = "userData"
