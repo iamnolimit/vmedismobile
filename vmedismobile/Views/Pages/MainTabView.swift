@@ -235,15 +235,15 @@ struct MainTabView: View {
         // NOTE: /lap-obatlaris adalah laporan apotek, BUKAN forecast!
         let forecastMenus = ["/laporan-super-pareto", 
                             "/analisa-penjualan", "/forecast-penjualan", 
-                            "/laporan-trend-penjualan"]
-        var hasForecastAccess = false
+                            "/laporan-trend-penjualan"]        var hasForecastAccess = false
         for url in aksesMenu {
             if forecastMenus.contains(url) {
                 hasForecastAccess = true
                 print("🎯 Forecast access GRANTED because user has: \(url)")
                 break
             }
-        }        if !hasForecastAccess {
+        }
+        if !hasForecastAccess {
             print("❌ Forecast access DENIED - no matching forecast menu URLs found")
         }
         
