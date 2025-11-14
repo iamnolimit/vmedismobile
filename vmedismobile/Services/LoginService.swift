@@ -134,8 +134,9 @@ private struct GraphQLMenuItem: Codable {
 
 @MainActor
 class LoginService: ObservableObject {
-    private let baseURL = "https://api5.vmedis.com"
+    private let baseURL = "https://api3.vmedis.com"
     private let domainValidationURL = "https://api3penjualan.vmedis.com"
+    private let graphqlURL = "https://gqlmobile.vmedis.com/ailawa-aed"  // GraphQL endpoint sama seperti Android
     
     // MARK: - Domain Validation
     
@@ -398,9 +399,8 @@ class LoginService: ObservableObject {
             print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             return ([], [])
         }
-        
-        // GraphQL endpoint
-        guard let url = URL(string: "\(baseURL)/graphql") else {
+          // GraphQL endpoint
+        guard let url = URL(string: graphqlURL) else {
             throw LoginError.invalidURL
         }
         
