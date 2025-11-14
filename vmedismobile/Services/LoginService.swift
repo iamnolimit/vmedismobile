@@ -112,11 +112,18 @@ private struct GraphQLMenuResponse: Codable {
 }
 
 private struct GraphQLMenuData: Codable {
-    let MenuGroupUser: GraphQLMenuGroupUser?
+    let mutGroupUserV2: GraphQLMenuGroupUser?
 }
 
 private struct GraphQLMenuGroupUser: Codable {
-    let Items1: [GraphQLMenuItem]?
+    let gak: Bool?
+    let Items: [GraphQLMenuHeader]?    // Header menu
+    let Items1: [GraphQLMenuItem]?     // Detail menu dengan akses
+}
+
+private struct GraphQLMenuHeader: Codable {
+    let mn_nama: String?
+    let mn_kode: String?
 }
 
 private struct GraphQLMenuItem: Codable {
@@ -300,8 +307,7 @@ class LoginService: ObservableObject {
             // Decode response
             do {
                 var loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
-                
-                // Jika login sukses, fetch menu access
+                  // Jika login sukses, fetch menu access
                 if loginResponse.status == "success", var userData = loginResponse.data {
                     print("✅ Login successful, fetching menu access...")
                     
@@ -310,7 +316,10 @@ class LoginService: ObservableObject {
                         let menuAccess = try await fetchMenuAccess(
                             grId: userData.gr_id ?? 0,
                             level: userData.lvl ?? 999,
-                            token: userData.token ?? ""
+                            token: userData.token ?? "",
+                            appId: userData.app_id ?? "",
+                            appJenis: userData.app_jenis ?? 0,
+                            appReg: userData.app_reg ?? ""
                         )
                         
                         // Update userData dengan menu access
@@ -355,17 +364,38 @@ class LoginService: ObservableObject {
             print("Network Error: \(error)")
             throw LoginError.networkError(error)
         }
-    }
-    
-    // MARK: - Fetch Menu Access
+    }    // MARK: - Fetch Menu Access
     
     /// Fetch menu access dari server berdasarkan gr_id dan level user
-    private func fetchMenuAccess(grId: Int, level: Int, token: String) async throws -> (aksesMenu: [String], aksesMenuHead: [String]) {
-        print("🔐 Fetching menu access for gr_id: \(grId), level: \(level)")
+    /// - Parameters:
+    ///   - grId: Group ID dari user
+    ///   - level: Level user (1 = superadmin, 999+ = regular user)
+    ///   - token: Auth token
+    ///   - appId: Application ID (affid)
+    ///   - appJenis: Jenis aplikasi (1=Apotek, 2=Klinik, dst)
+    ///   - appReg: App registration
+    /// - Returns: Tuple berisi aksesMenu dan aksesMenuHead
+    private func fetchMenuAccess(
+        grId: Int,
+        level: Int,
+        token: String,
+        appId: String,
+        appJenis: Int,
+        appReg: String
+    ) async throws -> (aksesMenu: [String], aksesMenuHead: [String]) {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔐 FETCHING MENU ACCESS")
+        print("   gr_id: \(grId)")
+        print("   level: \(level)")
+        print("   app_id (affid): \(appId)")
+        print("   app_jenis: \(appJenis)")
+        print("   app_reg: \(appReg)")
+        print("   token: \(token.prefix(20))...")
         
         // Jika superadmin (level 1), tidak perlu fetch - return empty (akan dapat full access)
         if level == 1 {
             print("👑 Superadmin detected - skipping menu fetch")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             return ([], [])
         }
         
@@ -374,10 +404,22 @@ class LoginService: ObservableObject {
             throw LoginError.invalidURL
         }
         
-        // GraphQL query
+        // GraphQL mutation - SAMA seperti Android!
+        // Android menggunakan mutGroupUserV2, bukan MenuGroupUser query
         let query = """
-        query {
-          MenuGroupUser(gr_id: \(grId)) {
+        mutation {
+          mutGroupUserV2(inputMenuGroup: {
+            affid: "\(appId)",
+            gr_id: "\(grId)",
+            app_jenis: "\(appJenis)",
+            time: "",
+            reg: "\(appReg)"
+          }) {
+            gak
+            Items {
+              mn_nama
+              mn_kode
+            }
             Items1 {
               mn_url
               mn_kode
@@ -386,7 +428,6 @@ class LoginService: ObservableObject {
           }
         }
         """
-        
         // Setup request
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -397,7 +438,10 @@ class LoginService: ObservableObject {
         let requestBody: [String: Any] = ["query": query]
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
         
-        print("📡 GraphQL Query: \(query)")
+        print("📡 GraphQL Request:")
+        print("   URL: \(url)")
+        print("   Query: \(query)")
+        print("   Authorization: Bearer \(token.prefix(20))...")
         
         // Kirim request
         do {
@@ -405,22 +449,30 @@ class LoginService: ObservableObject {
             
             // Check HTTP response
             if let httpResponse = response as? HTTPURLResponse {
-                print("HTTP Status Code: \(httpResponse.statusCode)")
+                print("   HTTP Status: \(httpResponse.statusCode)")
+                
+                if httpResponse.statusCode != 200 {
+                    print("❌ HTTP Error: Status code \(httpResponse.statusCode)")
+                }
             }
               // Debug: Print raw response
             if let responseString = String(data: data, encoding: .utf8) {
-                print("GraphQL Response: \(responseString)")
+                print("📥 GraphQL Response:")
+                print(responseString)
             }
-            
-            // Decode response
+              // Decode response
             let menuResponse = try JSONDecoder().decode(GraphQLMenuResponse.self, from: data)
             
             // Extract menu access
             var aksesMenu: [String] = []
             var aksesMenuHead: [String] = []
             
-            if let items = menuResponse.data?.MenuGroupUser?.Items1 {
-                for item in items {
+            if let items = menuResponse.data?.mutGroupUserV2?.Items1 {
+                print("✅ mutGroupUserV2.Items1 found: \(items.count) items")
+                
+                for (index, item) in items.enumerated() {
+                    print("   \(index + 1). mn_url: \(item.mn_url ?? "nil"), mn_nama: \(item.mn_nama ?? "nil")")
+                    
                     if let mnUrl = item.mn_url, !mnUrl.isEmpty {
                         aksesMenu.append(mnUrl)
                     }
@@ -428,8 +480,31 @@ class LoginService: ObservableObject {
                         aksesMenuHead.append(mnNama)
                     }
                 }
+            } else {
+                print("⚠️ mutGroupUserV2.Items1 is nil or empty!")
+                
+                // Debug: Print structure
+                if let mutGroupUserV2 = menuResponse.data?.mutGroupUserV2 {
+                    print("   mutGroupUserV2 exists:")
+                    print("   - gak: \(mutGroupUserV2.gak ?? false)")
+                    print("   - Items: \(mutGroupUserV2.Items?.count ?? 0)")
+                    print("   - Items1: \(mutGroupUserV2.Items1?.count ?? 0)")
+                } else if menuResponse.data != nil {
+                    print("   data exists but mutGroupUserV2 is nil")
+                } else {
+                    print("   data is nil")
+                }
             }
-              print("✅ Menu access parsed: \(aksesMenu.count) URLs, \(aksesMenuHead.count) headers")
+              print("✅ Menu access parsed:")
+            print("   - aksesMenu: \(aksesMenu.count) URLs")
+            print("   - aksesMenuHead: \(aksesMenuHead.count) headers")
+            
+            if aksesMenu.isEmpty {
+                print("⚠️ WARNING: No menu URLs returned from server!")
+                print("   This user will have NO access to any menu.")
+            }
+            
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             
             // JANGAN save ke MenuAccessManager di sini!
             // Menu access akan di-save per-session oleh MainTabView saat load
@@ -439,6 +514,7 @@ class LoginService: ObservableObject {
             
         } catch {
             print("❌ Failed to fetch menu access: \(error)")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             throw error
         }
     }
