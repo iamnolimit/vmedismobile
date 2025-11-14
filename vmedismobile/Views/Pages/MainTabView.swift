@@ -7,7 +7,8 @@ struct MainTabView: View {
     @State private var previousTab: Int? = nil // Track previous tab for back navigation
     @State private var navigationRoute: String?
     @State private var shouldNavigateToReport = false
-    @State private var submenuToExpand: String?    @State private var accessibleTabs: [String] = []
+    @State private var submenuToExpand: String?
+    @State private var accessibleTabs: [String] = []
     @State private var isCheckingAccess = true
     
     var body: some View {
