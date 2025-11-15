@@ -484,6 +484,12 @@ private struct ForgotPasswordViewContent: View {
     @State private var domain: String = ""
     @State private var email: String = ""
     @State private var isLoading: Bool = false
+    @State private var showAlert: Bool = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
+    @State private var isSuccess: Bool = false
+    
+    @StateObject private var forgotPasswordService = ForgotPasswordService()
     
     private let accentColor = Color.blue
     
@@ -510,6 +516,7 @@ private struct ForgotPasswordViewContent: View {
                             TextField("Masukkan domain", text: $domain)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .autocapitalization(.none)
+                                .disabled(isLoading)
                             Text(".vmedis.com")
                                 .foregroundColor(.secondary)
                         }
@@ -523,25 +530,92 @@ private struct ForgotPasswordViewContent: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .autocapitalization(.none)
                             .keyboardType(.emailAddress)
+                            .disabled(isLoading)
                     }
                     
                     Button(action: {
-                        // Placeholder action
-                        dismiss()
+                        Task { await handleResetPassword() }
                     }) {
-                        Text("Reset Password")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(accentColor)
-                            .cornerRadius(12)
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                                Text("Mengirim...")
+                                    .font(.system(size: 17, weight: .semibold))
+                            } else {
+                                Text("Reset Password")
+                                    .font(.system(size: 17, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(isFormValid && !isLoading ? accentColor : Color.gray.opacity(0.4))
+                        .cornerRadius(12)
                     }
-                    .disabled(domain.isEmpty || email.isEmpty)
+                    .disabled(!isFormValid || isLoading)
                 }
                 .padding(.horizontal, 24)
                 
                 Spacer()
+            }
+        }
+        .alert(alertTitle, isPresented: $showAlert) {
+            Button("OK") {
+                if isSuccess {
+                    // Auto dismiss after 5 seconds on success (like Android)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        dismiss()
+                    }
+                }
+            }
+        } message: {
+            Text(alertMessage)
+        }
+    }
+    
+    private var isFormValid: Bool {
+        !domain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    private func handleResetPassword() async {
+        guard isFormValid else { return }
+        
+        isLoading = true
+        
+        let cleanDomain = domain.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        do {
+            let response = try await forgotPasswordService.requestResetPassword(
+                domain: cleanDomain,
+                email: cleanEmail
+            )
+            
+            await MainActor.run {
+                if response.status == "success" {
+                    // Success - sama seperti Android
+                    alertTitle = "Informasi"
+                    alertMessage = response.message ?? "Permintaan reset password berhasil. Silakan cek email Anda untuk melanjutkan proses reset password."
+                    isSuccess = true
+                } else {
+                    // Error - sama seperti Android
+                    alertTitle = "Peringatan"
+                    alertMessage = response.message ?? "Gagal melakukan reset"
+                    isSuccess = false
+                }
+                showAlert = true
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                alertTitle = "Peringatan"
+                alertMessage = "Terjadi kesalahan. Silakan coba lagi."
+                isSuccess = false
+                showAlert = true
+                isLoading = false
             }
         }
     }

@@ -85,14 +85,15 @@ class ForgotPasswordService: ObservableObject {
            let vmedresetuser = dataObj["vmedresetuser"] as? [String: Any] {
             
             let gak = vmedresetuser["gak"] as? Bool ?? true
-            
-            if !gak {
-                // Success
+              if !gak {
+                // Success - gak = false berarti berhasil (sama seperti Android)
                 let user = vmedresetuser["user"] as? [String: Any]
                 let aptnama = vmedresetuser["aptnama"] as? [String: Any]
                 let errors = vmedresetuser["errors"] as? [[String: Any]]
                 
-                let message = errors?.first?["message"] as? String ?? "Link reset password telah dikirim ke email Anda."
+                // Ambil pesan dari errors[0].message (sama seperti Android)
+                // Default message sama seperti backend GraphQL
+                let message = errors?.first?["message"] as? String ?? "Permintaan reset password berhasil. Silakan cek email Anda untuk melanjutkan proses reset password."
                 
                 let userData = ResetPasswordResponse.ResetPasswordData(
                     user_id: user?["user_id"] as? Int,
@@ -102,15 +103,23 @@ class ForgotPasswordService: ObservableObject {
                 )
                 
                 print("✅ Reset password berhasil")
+                print("   Message: \(message)")
                 return ResetPasswordResponse(
                     status: "success",
                     message: message,
                     data: userData
                 )
             } else {
-                // Error
+                // Error - gak = true berarti gagal (sama seperti Android)
                 let errors = vmedresetuser["errors"] as? [[String: Any]]
-                let errorMessage = errors?.first?["message"] as? String ?? "Email tidak terdaftar"
+                
+                // Ambil pesan error dari errors[0].message (sama seperti Android)
+                // Possible messages dari backend:
+                // - "Domain tidak tersedia"
+                // - "Email {email} tidak terdaftar dalam domain {domain}"
+                // - "Silahkan mengisi domain terlebih dahulu!"
+                // - "Silahkan mengisi email terlebih dahulu!"
+                let errorMessage = errors?.first?["message"] as? String ?? "Gagal melakukan reset"
                 
                 print("❌ Reset password gagal: \(errorMessage)")
                 return ResetPasswordResponse(
@@ -123,24 +132,72 @@ class ForgotPasswordService: ObservableObject {
         
         throw URLError(.cannotParseResponse)
     }
-    
-    // MARK: - Validate Domain
+      // MARK: - Validate Domain
+    /// Validasi domain sebelum reset password - SAMA SEPERTI LOGIN
+    /// Menggunakan endpoint: https://api3penjualan.vmedis.com/klinik/validate-domain
     private func validateDomain(_ domain: String) async throws -> (status: String, message: String?) {
-        let url = URL(string: "https://vmedis.com/site/cek-domain-tersedia")!
+        print("=== VALIDATING DOMAIN (FORGOT PASSWORD) ===")
+        print("Domain: \(domain)")
+        
+        // SAMA dengan LoginService - gunakan endpoint yang sama
+        guard let url = URL(string: "https://api3penjualan.vmedis.com/klinik/validate-domain") else {
+            throw URLError(.badURL)
+        }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
-        let bodyString = "domain=\(domain)"
-        request.httpBody = bodyString.data(using: .utf8)
+        // Buat form data parameters - SAMA dengan LoginService
+        let parameters = ["domain": domain]
         
-        let (data, _) = try await URLSession.shared.data(for: request)
-        
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let status = json["status"] as? String {
-            return (status: status, message: json["message"] as? String)
+        // Convert to form data string
+        var formDataString = ""
+        for (key, value) in parameters {
+            if !formDataString.isEmpty {
+                formDataString += "&"
+            }
+            if let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let encodedValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                formDataString += "\(encodedKey)=\(encodedValue)"
+            }
         }
         
+        request.httpBody = formDataString.data(using: .utf8)
+        
+        print("Request URL: \(url)")
+        print("Form Data: \(formDataString)")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check HTTP response
+        if let httpResponse = response as? HTTPURLResponse {
+            print("HTTP Status Code: \(httpResponse.statusCode)")
+        }
+        
+        // Debug: Print raw response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Raw Response: \(responseString)")
+        }
+        
+        // Parse JSON response - SAMA dengan LoginService
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let status = json["status"] as? String {
+            print("Domain validation status: \(status)")
+            
+            // Check if status is "failed" or "error"
+            if status == "failed" || status == "error" {
+                let message = json["message"] as? String ?? "Domain tidak tersedia"
+                print("❌ Domain tidak valid: \(message)")
+                return (status: "error", message: message)
+            }
+            
+            // Success
+            print("✅ Domain valid")
+            return (status: "success", message: json["message"] as? String)
+        }
+        
+        print("❌ Failed to parse domain validation response")
         return (status: "error", message: "Domain validation failed")
     }
 }
