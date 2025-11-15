@@ -153,11 +153,11 @@ struct AccountPickerRow: View {
                 
                 // Info
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(session.displayName)
+                    Text(session.domainInfo)
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Text(session.domainInfo)
+                    Text(session.displayName)
                         .font(.subheadline)
                         .foregroundColor(.gray)
                     
