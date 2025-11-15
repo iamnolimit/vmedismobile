@@ -196,7 +196,7 @@ struct RegisterView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(0.8)
                     } else {
-                        Text("Daftar Sekarang")
+                        Text("Buat Akun")
                             .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 16, weight: .semibold))

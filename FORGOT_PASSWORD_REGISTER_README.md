@@ -135,7 +135,7 @@ vmedismobile/
 ### Updated LoginPageView
 
 - "Lupa Password?" link below login button
-- "Belum punya akun? Daftar Sekarang" link in footer
+- "Belum punya akun? Buat Akun" link in footer
 
 ## 🔐 Security
 
@@ -160,7 +160,7 @@ vmedismobile/
 LoginPageView
 ├── [Tap "Lupa Password?"] → ForgotPasswordView
 │   └── [Success] → Back to LoginPageView
-└── [Tap "Daftar Sekarang"] → RegisterView
+└── [Tap "Buat Akun"] → RegisterView
     └── [Success] → Back to LoginPageView
 ```
 

@@ -214,7 +214,7 @@ struct LoginPageView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.secondary)
                     
-                    Text("Daftar Sekarang")
+                    Text("Buat Akun")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(accentColor)
                     
@@ -529,7 +529,7 @@ private struct ForgotPasswordViewContent: View {
                         // Placeholder action
                         dismiss()
                     }) {
-                        Text("Kirim Link Reset Password")
+                        Text("Reset Password")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
