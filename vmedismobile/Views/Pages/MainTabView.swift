@@ -1102,11 +1102,11 @@ struct AccountManagementSection: View {    @StateObject private var sessionManag
                                 
                                 // Info
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(session.displayName)
+                                    Text(session.domainInfo)
                                         .font(.subheadline) // Sama dengan submenu title
                                         .foregroundColor(.black)
                                     
-                                    Text(session.domainInfo)
+                                    Text(session.displayName)
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
