@@ -34,11 +34,11 @@ class ForgotPasswordService: ObservableObject {
                 data: nil
             )
         }
-        
-        print("✅ Domain valid, proceed to reset password...")
+          print("✅ Domain valid, proceed to reset password...")
         
         // Step 2: Request reset password via GraphQL
-        let graphqlEndpoint = "https://apollo.vmedis.com/graphql"
+        // IMPORTANT: Use same endpoint as login - https://gqlmobile.vmedis.com/ailawa-aed
+        let graphqlEndpoint = "https://gqlmobile.vmedis.com/ailawa-aed"
         
         let query = """
         mutation {
