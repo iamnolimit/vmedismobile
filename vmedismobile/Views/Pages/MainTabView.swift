@@ -1022,11 +1022,11 @@ struct AccountManagementSection: View {    @StateObject private var sessionManag
                         
                         // Info
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(activeSession.displayName)
+                            Text(activeSession.domainInfo)
                                 .font(.body) // Sama dengan menu title
                                 .foregroundColor(.black)
                             
-                            Text(activeSession.domainInfo)
+                            Text(activeSession.displayName)
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
