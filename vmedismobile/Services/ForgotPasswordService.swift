@@ -71,11 +71,21 @@ class ForgotPasswordService: ObservableObject {
         
         let body: [String: Any] = ["query": query]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
         let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Debug: Print HTTP status
+        if let httpResponse = response as? HTTPURLResponse {
+            print("HTTP Status Code: \(httpResponse.statusCode)")
+        }
+        
+        // Debug: Print raw response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Raw GraphQL Response: \(responseString)")
+        }
         
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
+            print("❌ Bad server response")
             throw URLError(.badServerResponse)
         }
         
@@ -120,8 +130,7 @@ class ForgotPasswordService: ObservableObject {
                 // - "Silahkan mengisi domain terlebih dahulu!"
                 // - "Silahkan mengisi email terlebih dahulu!"
                 let errorMessage = errors?.first?["message"] as? String ?? "Gagal melakukan reset"
-                
-                print("❌ Reset password gagal: \(errorMessage)")
+                  print("❌ Reset password gagal: \(errorMessage)")
                 return ResetPasswordResponse(
                     status: "error",
                     message: errorMessage,
@@ -130,7 +139,16 @@ class ForgotPasswordService: ObservableObject {
             }
         }
         
-        throw URLError(.cannotParseResponse)
+        // Jika sampai sini, berarti response tidak bisa di-parse
+        print("❌ Failed to parse GraphQL response")
+        print("   Response data: \(String(data: data, encoding: .utf8) ?? "N/A")")
+        
+        // Return error dengan pesan yang jelas
+        return ResetPasswordResponse(
+            status: "error",
+            message: "Gagal memproses response dari server",
+            data: nil
+        )
     }
       // MARK: - Validate Domain
     /// Validasi domain sebelum reset password - SAMA SEPERTI LOGIN

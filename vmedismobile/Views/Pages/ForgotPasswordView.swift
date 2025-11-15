@@ -129,7 +129,7 @@ struct ForgotPasswordView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(0.8)
                     } else {
-                        Text("Kirim Link Reset")
+                        Text("Reset Password")
                             .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "paperplane.fill")
                             .font(.system(size: 16, weight: .semibold))
